@@ -12,8 +12,7 @@ CREATE TABLE "Guild" (
 
 -- CreateTable
 CREATE TABLE "User" (
-    "id" UUID NOT NULL,
-    "discordId" TEXT NOT NULL,
+    "id" TEXT NOT NULL,
     "uuid" UUID NOT NULL,
     "username" TEXT NOT NULL,
     "guildId" UUID,
@@ -24,18 +23,14 @@ CREATE TABLE "User" (
 
 -- CreateTable
 CREATE TABLE "Profile" (
-    "id" SERIAL NOT NULL,
-    "userId" UUID NOT NULL,
+    "userId" TEXT NOT NULL,
     "mode" "Mode" NOT NULL,
     "wins" INTEGER NOT NULL DEFAULT 0,
     "losses" INTEGER NOT NULL DEFAULT 0,
     "mvps" INTEGER NOT NULL DEFAULT 0,
 
-    CONSTRAINT "Profile_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Profile_pkey" PRIMARY KEY ("mode","userId")
 );
-
--- CreateIndex
-CREATE UNIQUE INDEX "User_discordId_key" ON "User"("discordId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_uuid_key" ON "User"("uuid");

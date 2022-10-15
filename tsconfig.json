@@ -8,7 +8,8 @@
     "paths": {
 			"@util/*": ["util/*"],
 			"@structs/*": ["structures/*"],
-			"@handlers/*": ["handlers/*"]
+			"@handlers/*": ["handlers/*"],
+			"@providers/*": ["providers/*"]
 		},
     "outDir": "./dist",
     "removeComments": true,
