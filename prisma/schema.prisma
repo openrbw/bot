@@ -1,0 +1,46 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Mode {
+  Ranked
+  Unranked
+  Open
+}
+
+model Guild {
+  id         String   @id @default(uuid()) @db.Uuid
+  members    User[]
+  experience Int      @default(0)
+  createdAt  DateTime @default(now())
+}
+
+model User {
+  id        String    @id @default(uuid()) @db.Uuid
+  profiles  Profile[]
+  discordId String    @unique
+  uuid      String    @unique @db.Uuid
+  username  String
+  guild     Guild?    @relation(fields: [guildId], references: [id])
+  guildId   String?   @db.Uuid
+  createdAt DateTime  @default(now())
+}
+
+model Profile {
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @db.Uuid
+  mode   Mode
+  wins   Int    @default(0)
+  losses Int    @default(0)
+  mvps   Int    @default(0)
+
+  @@id([mode, userId])
+}
