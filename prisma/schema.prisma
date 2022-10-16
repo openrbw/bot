@@ -16,6 +16,11 @@ enum Mode {
   Open
 }
 
+model Category {
+  id      String @id
+  guildId String
+}
+
 model Party {
   leaderId String @id
   members  User[]
@@ -34,12 +39,22 @@ model Map {
   height Int    @db.SmallInt
 }
 
+model PickedPlayer {
+  userId String
+  index  Int
+  game   Game   @relation(fields: [gameId], references: [id])
+  gameId Int
+
+  @@id([userId, gameId])
+}
+
 model Game {
-  id              Int       @id @default(autoincrement())
-  players         User[]
+  id              Int            @id @default(autoincrement())
+  players         PickedPlayer[]
+  remainingIds    String[]
   textChannelId   String
   voiceChannelIds String[]
-  createdAt       DateTime  @default(now())
+  createdAt       DateTime       @default(now())
   startedAt       DateTime?
   endedAt         DateTime?
 }
@@ -59,7 +74,6 @@ model User {
   faction   Faction?  @relation(fields: [factionId], references: [id])
   factionId String?   @db.Uuid
   createdAt DateTime  @default(now())
-  games     Game[]
   party     Party     @relation(fields: [partyId], references: [leaderId])
   partyId   String
 }

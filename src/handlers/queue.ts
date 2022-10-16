@@ -1,19 +1,22 @@
+import { GameManager } from '@managers/game';
 import { EventHandler, Handler } from '@matteopolak/framecord';
 import { Mode, Party, Profile, User } from '@prisma/client';
+import { iter } from '@util/iter';
 import { stdev } from '@util/math';
 import { GameConfig, gameConfig, queueConfig } from 'config';
 import { prisma } from 'database';
 import { ChannelType, VoiceState } from 'discord.js';
 import { inPlaceSort } from 'fast-sort';
-import GameManager from 'managers/game';
 
 export interface QueueList {
 	mode: Mode;
+	guildId: string;
 	players: Set<string>;
 }
 
 export const queueToMode: Map<string, Mode> = new Map();
 export const modeAndGuildToQueueList: Map<string, QueueList> = new Map();
+export const reservedPlayers: Set<string> = new Set();
 
 export interface VoiceStateResolvable {
 	channelId: string | null;
@@ -30,7 +33,11 @@ export type PartyWithMemberProfiles = Party & {
 };
 
 export default class QueueHandler extends Handler {
-	private manager: GameManager = new GameManager(this.client);
+	private manager: GameManager = new GameManager({ client: this.client });
+
+	public async init() {
+		this.client.registerHandler(this.manager);
+	}
 
 	private async isSliceValid(
 		parties: PartyWithMemberProfiles[],
@@ -57,7 +64,9 @@ export default class QueueHandler extends Handler {
 				members: {
 					every: {
 						id: {
-							in: [...queue.players.keys()],
+							in: iter(queue.players)
+								.filter(p => !reservedPlayers.has(p))
+								.toArray(),
 						},
 					},
 				},
@@ -114,7 +123,7 @@ export default class QueueHandler extends Handler {
 				p.members.length,
 		);
 
-		return this.manager.createGame(queue, lowest);
+		return this.manager.initializeGame(queue, lowest);
 	}
 
 	private async addPlayer(state: VoiceStateResolvable) {
@@ -133,14 +142,15 @@ export default class QueueHandler extends Handler {
 		if (!user.partyId) user.partyId = user.id;
 
 		const key = `${state.guild.id}.${mode}`;
-		const queue = modeAndGuildToQueueList.has(key)
-			? modeAndGuildToQueueList.get(key)!
-			: modeAndGuildToQueueList
-					.set(key, {
-						mode,
-						players: new Set(),
-					})
-					.get(key)!;
+		const queue =
+			modeAndGuildToQueueList.get(key) ??
+			modeAndGuildToQueueList
+				.set(key, {
+					mode,
+					players: new Set(),
+					guildId: state.guild.id,
+				})
+				.get(key)!;
 
 		queue.players.add(user.id);
 

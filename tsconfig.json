@@ -9,7 +9,8 @@
 			"@util/*": ["util/*"],
 			"@structs/*": ["structures/*"],
 			"@handlers/*": ["handlers/*"],
-			"@providers/*": ["providers/*"]
+			"@providers/*": ["providers/*"],
+			"@managers/*": ["managers/*"]
 		},
     "outDir": "./dist",
     "removeComments": true,

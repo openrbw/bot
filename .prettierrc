@@ -1,6 +1,5 @@
 {
 	"importOrder": [
-		"^node:path$",
 		"^node:.*$",
 		"<THIRD_PARTY_MODULES>",
 		"^[./]"
