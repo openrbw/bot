@@ -16,11 +16,39 @@ enum Mode {
   Open
 }
 
-model Guild {
+model Queue {
+  id      String @id
+  guildId String
+  mode    Mode
+}
+
+model Map {
+  id     Int    @id @default(autoincrement())
+  url    String
+  name   String
+  height Int    @db.SmallInt
+}
+
+model Game {
+  id              Int       @id @default(autoincrement())
+  players         User[]
+  textChannelId   String
+  voiceChannelIds String[]
+  createdAt       DateTime  @default(now())
+  startedAt       DateTime?
+  endedAt         DateTime?
+}
+
+model Faction {
   id         String   @id @default(uuid()) @db.Uuid
   members    User[]
   experience Int      @default(0)
   createdAt  DateTime @default(now())
+}
+
+model Party {
+  id      String @id
+  members User[]
 }
 
 model User {
@@ -28,18 +56,24 @@ model User {
   profiles  Profile[]
   uuid      String    @unique @db.Uuid
   username  String
-  guild     Guild?    @relation(fields: [guildId], references: [id])
-  guildId   String?   @db.Uuid
+  faction   Faction?  @relation(fields: [factionId], references: [id])
+  factionId String?   @db.Uuid
   createdAt DateTime  @default(now())
+  games     Game[]
+  party     Party     @relation(fields: [partyId], references: [id])
+  partyId   String
 }
 
 model Profile {
-  user   User   @relation(fields: [userId], references: [id])
-  userId String
-  mode   Mode
-  wins   Int    @default(0)
-  losses Int    @default(0)
-  mvps   Int    @default(0)
+  user       User   @relation(fields: [userId], references: [id])
+  userId     String
+  mode       Mode
+  wins       Int    @default(0)
+  winstreak  Int    @default(0)
+  losses     Int    @default(0)
+  losestreak Int    @default(0)
+  mvps       Int    @default(0)
+  rating     Int    @default(0)
 
   @@id([mode, userId])
 }

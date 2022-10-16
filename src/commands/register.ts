@@ -5,7 +5,6 @@ import {
 	CommandOptions,
 	CommandResponse,
 	CommandSource,
-	EventHandler,
 } from '@matteopolak/framecord';
 import {
 	AuthCodeResponse,
@@ -21,10 +20,9 @@ export default class Register extends Command {
 
 		this.arguments.push(
 			new Argument({
-				type: ArgumentType.Integer,
-				required: true,
 				name: 'code',
 				description: 'Your code from auth.mc-oauth.com',
+				type: ArgumentType.Integer,
 				minValue: 100000,
 				maxValue: 999999,
 				mapper: (_, code) => getPlayerData(code),
@@ -34,16 +32,17 @@ export default class Register extends Command {
 		);
 	}
 
-	@EventHandler({ once: true })
-	public async ready() {
-		console.log('hello world');
-	}
-
 	public async run(
 		source: CommandSource,
 		response: AuthResponseSuccess<AuthCodeResponse>,
 	): CommandResponse {
-		await prisma.user.upsert({
+		const createParty = prisma.party.create({
+			data: {
+				id: source.user.id,
+			},
+		});
+
+		const createUser = prisma.user.upsert({
 			where: {
 				id: source.user.id,
 			},
@@ -55,8 +54,11 @@ export default class Register extends Command {
 				id: source.user.id,
 				uuid: response.uuid,
 				username: response.ign,
+				partyId: source.user.id,
 			},
 		});
+
+		await prisma.$transaction([createParty, createUser]);
 
 		return `You have successfully registered with the username **${escapeMarkdown(
 			response.ign,
