@@ -16,6 +16,11 @@ enum Mode {
   Open
 }
 
+model Party {
+  leaderId String @id
+  members  User[]
+}
+
 model Queue {
   id      String @id
   guildId String
@@ -46,11 +51,6 @@ model Faction {
   createdAt  DateTime @default(now())
 }
 
-model Party {
-  id      String @id
-  members User[]
-}
-
 model User {
   id        String    @id
   profiles  Profile[]
@@ -60,7 +60,7 @@ model User {
   factionId String?   @db.Uuid
   createdAt DateTime  @default(now())
   games     Game[]
-  party     Party     @relation(fields: [partyId], references: [id])
+  party     Party     @relation(fields: [partyId], references: [leaderId])
   partyId   String
 }
 
@@ -76,4 +76,11 @@ model Profile {
   rating     Int    @default(0)
 
   @@id([mode, userId])
+}
+
+model Event {
+  messageId String   @id
+  event     String
+  userId    String
+  expiresAt DateTime
 }

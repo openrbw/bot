@@ -38,7 +38,7 @@ export default class Register extends Command {
 	): CommandResponse {
 		const createParty = prisma.party.create({
 			data: {
-				id: source.user.id,
+				leaderId: source.user.id,
 			},
 		});
 
