@@ -25,8 +25,8 @@ export default class Register extends Command {
 				type: ArgumentType.Integer,
 				minValue: 100000,
 				maxValue: 999999,
-				mapper: (_, code) => getPlayerData(code),
-				filter: (_, response) => response.success,
+				mapper: getPlayerData,
+				filter: response => response.success,
 				error: 'You did not provide a valid authentication code.',
 			}),
 		);
@@ -36,13 +36,7 @@ export default class Register extends Command {
 		source: CommandSource,
 		response: AuthResponseSuccess<AuthCodeResponse>,
 	): CommandResponse {
-		const createParty = prisma.party.create({
-			data: {
-				leaderId: source.user.id,
-			},
-		});
-
-		const createUser = prisma.user.upsert({
+		const user = await prisma.user.upsert({
 			where: {
 				id: source.user.id,
 			},
@@ -54,14 +48,16 @@ export default class Register extends Command {
 				id: source.user.id,
 				uuid: response.uuid,
 				username: response.ign,
-				partyId: source.user.id,
+				party: {
+					create: {
+						leaderId: source.user.id,
+					},
+				},
 			},
 		});
 
-		await prisma.$transaction([createParty, createUser]);
-
 		return `You have successfully registered with the username **${escapeMarkdown(
-			response.ign,
+			user.username,
 		)}**.`;
 	}
 

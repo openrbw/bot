@@ -16,7 +16,7 @@ export interface QueueList {
 
 export const queueToMode: Map<string, Mode> = new Map();
 export const modeAndGuildToQueueList: Map<string, QueueList> = new Map();
-export const reservedPlayers: Set<string> = new Set();
+export const reservedIds: Set<string> = new Set();
 
 export interface VoiceStateResolvable {
 	channelId: string | null;
@@ -30,6 +30,10 @@ export type PartyWithMemberProfiles = Party & {
 	members: (User & {
 		profiles: Profile[];
 	})[];
+};
+
+export type MemberProfile = User & {
+	profiles: Profile[];
 };
 
 export default class QueueHandler extends Handler {
@@ -65,7 +69,7 @@ export default class QueueHandler extends Handler {
 					every: {
 						id: {
 							in: iter(queue.players)
-								.filter(p => !reservedPlayers.has(p))
+								.filter(p => !reservedIds.has(p))
 								.toArray(),
 						},
 					},
@@ -93,6 +97,12 @@ export default class QueueHandler extends Handler {
 		let lowest: PartyWithMemberProfiles[] = [];
 		let lowestStdev = Infinity;
 
+		inPlaceSort(parties).desc(
+			p =>
+				p.members.reduce((a, b) => a + (b.profiles[0]?.rating ?? 0), 0) /
+				p.members.length,
+		);
+
 		for (let i = 0; i <= partyCount; ++i) {
 			let players = 0;
 
@@ -116,12 +126,6 @@ export default class QueueHandler extends Handler {
 		}
 
 		if (lowest.length === 0) return;
-
-		inPlaceSort(lowest).desc(
-			p =>
-				p.members.reduce((a, b) => a + (b.profiles[0]?.rating ?? 0), 0) /
-				p.members.length,
-		);
 
 		return this.manager.initializeGame(queue, lowest);
 	}

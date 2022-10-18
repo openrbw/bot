@@ -8,11 +8,13 @@ import {
 } from '@matteopolak/framecord';
 import { Mode } from '@prisma/client';
 import { prisma } from 'database';
-import { ChannelType } from 'discord.js';
+import { ChannelType, PermissionFlagsBits } from 'discord.js';
 
 export default class CreateQueue extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
+
+		this.permissions.add(PermissionFlagsBits.ManageGuild);
 
 		this.arguments.push(
 			new Argument({

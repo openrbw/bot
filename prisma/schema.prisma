@@ -16,6 +16,15 @@ enum Mode {
   Open
 }
 
+enum GameState {
+  PickingTeams
+  BanningMaps
+  Playing
+  Scoring
+  Finished
+  Voided
+}
+
 model Category {
   id      String @id
   guildId String
@@ -41,22 +50,30 @@ model Map {
 
 model PickedPlayer {
   userId String
-  index  Int
+  team   Int    @db.SmallInt
   game   Game   @relation(fields: [gameId], references: [id])
   gameId Int
 
   @@id([userId, gameId])
+  @@index([userId])
 }
 
 model Game {
   id              Int            @id @default(autoincrement())
+  state           GameState
+  mode            Mode
   players         PickedPlayer[]
+  lastPickIndex   Int            @default(-1) @db.SmallInt
+  captains        String[]
   remainingIds    String[]
-  textChannelId   String
+  textChannelId   String         @unique
   voiceChannelIds String[]
   createdAt       DateTime       @default(now())
   startedAt       DateTime?
   endedAt         DateTime?
+
+  @@index([textChannelId])
+  @@index([voiceChannelIds])
 }
 
 model Faction {
