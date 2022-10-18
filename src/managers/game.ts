@@ -291,6 +291,8 @@ export class GameManager extends Handler {
 					a.map[b.team] = 1;
 				}
 
+				if (a.map[b.team] === gameConfig[game.mode].playersPerTeam) return a;
+
 				if (
 					a.map[b.team] < a.count ||
 					(a.map[b.team] === a.count && a.nextIndex === lastIndex)
@@ -302,7 +304,7 @@ export class GameManager extends Handler {
 				return a;
 			},
 			{
-				nextIndex: 0,
+				nextIndex: -1,
 				count: Infinity,
 				map: {} as Record<string, number>,
 			},

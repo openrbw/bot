@@ -49,6 +49,8 @@ export default class PickCommand extends Command {
 
 		game.remainingIds.splice(pickIndex, 1);
 
+		// Insert the player, update the index, and remove them from the
+		// list of remaining picks
 		await prisma.game.update({
 			where: {
 				id: game.id,
@@ -67,6 +69,7 @@ export default class PickCommand extends Command {
 			},
 		});
 
+		// Sync the player locally so the next index is picked correctly
 		game.players.push({
 			userId: user.id,
 			team: index,
@@ -74,6 +77,13 @@ export default class PickCommand extends Command {
 		});
 
 		const nextIndex = GameManager.calculateNextPick(index, game);
+
+		if (nextIndex === -1) {
+			// move on to banning maps
+			
+
+			return;
+		}
 
 		return embed({
 			title: `${source.user.tag} has picked ${user.tag}`,
