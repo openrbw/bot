@@ -88,7 +88,10 @@ class IterUtil<T> implements Iterable<T> {
 	}
 
 	/** Reduces the iterable into a single value */
-	public reduce<R>(reducer: TypedMultiArgFunction<[R, T], R>, start: R) {
+	public reduce<R>(
+		reducer: TypedMultiArgFunction<[callback: R, item: T], R>,
+		start: R,
+	) {
 		let current = start;
 
 		for (const item of this.iterable) {
@@ -120,6 +123,23 @@ class IterUtil<T> implements Iterable<T> {
 		}
 
 		return this;
+	}
+
+	public chunk<N extends number>(size: N) {
+		const iterable = this.iterable;
+		const chunk = function* () {
+			const chunk: T[] = [];
+
+			for (const item of iterable) {
+				chunk.push(item);
+
+				if (chunk.length === size) yield chunk.splice(0, chunk.length);
+			}
+
+			if (chunk.length > 0) yield chunk;
+		};
+
+		return new IterUtil<T[]>(chunk());
 	}
 
 	/** Returns the number of elements in the iterable */

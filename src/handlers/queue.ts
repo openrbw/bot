@@ -63,6 +63,9 @@ export default class QueueHandler extends Handler {
 	}
 
 	private async searchForGame(queue: QueueList) {
+		const guild = this.client.guilds.cache.get(queue.guildId);
+		if (guild === undefined) return;
+
 		const parties = await prisma.party.findMany({
 			where: {
 				members: {
@@ -127,7 +130,7 @@ export default class QueueHandler extends Handler {
 
 		if (lowest.length === 0) return;
 
-		return this.manager.initializeGame(queue, lowest);
+		return GameManager.initializeGame(queue, lowest, guild);
 	}
 
 	private async addPlayer(state: VoiceStateResolvable) {

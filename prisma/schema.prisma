@@ -44,8 +44,9 @@ model Queue {
 model Map {
   url        String
   name       String
-  name_lower String @id
-  height     Int    @db.SmallInt
+  name_lower String  @id
+  enabled    Boolean @default(true)
+  height     Int     @db.SmallInt
 }
 
 model PickedPlayer {
@@ -68,6 +69,8 @@ model Game {
   remainingIds    String[]
   textChannelId   String         @unique
   voiceChannelIds String[]
+  bannedMaps      String[]
+  captainMapBans  String[]
   createdAt       DateTime       @default(now())
   startedAt       DateTime?
   endedAt         DateTime?

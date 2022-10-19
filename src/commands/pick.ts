@@ -7,6 +7,7 @@ import {
 	CommandSource,
 	embed,
 } from '@matteopolak/framecord';
+import { GameState } from '@prisma/client';
 import { playersToFields } from '@util/message';
 import { prisma } from 'database';
 import { User } from 'discord.js';
@@ -15,6 +16,7 @@ export default class PickCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 
+		this.description = 'Picks a player during the picking stage';
 		this.arguments.push(
 			new Argument({
 				type: ArgumentType.User,
@@ -49,6 +51,15 @@ export default class PickCommand extends Command {
 
 		game.remainingIds.splice(pickIndex, 1);
 
+		// Sync the player locally so the next index is picked correctly
+		game.players.push({
+			userId: user.id,
+			team: index,
+			gameId: game.id,
+		});
+
+		const nextIndex = GameManager.calculateNextPick(index, game);
+
 		// Insert the player, update the index, and remove them from the
 		// list of remaining picks
 		await prisma.game.update({
@@ -56,6 +67,7 @@ export default class PickCommand extends Command {
 				id: game.id,
 			},
 			data: {
+				state: nextIndex === -1 ? GameState.BanningMaps : undefined,
 				lastPickIndex: index,
 				remainingIds: {
 					set: game.remainingIds,
@@ -69,20 +81,10 @@ export default class PickCommand extends Command {
 			},
 		});
 
-		// Sync the player locally so the next index is picked correctly
-		game.players.push({
-			userId: user.id,
-			team: index,
-			gameId: game.id,
-		});
-
-		const nextIndex = GameManager.calculateNextPick(index, game);
-
 		if (nextIndex === -1) {
-			// move on to banning maps
-			
-
-			return;
+			return embed({
+				title: 'Map Banning',
+			});
 		}
 
 		return embed({

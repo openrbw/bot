@@ -13,6 +13,7 @@ export default class CreateMapCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 
+		this.description = 'Creates a new map';
 		this.arguments.push(
 			new Argument({
 				type: ArgumentType.String,

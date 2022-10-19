@@ -16,6 +16,7 @@ export default class CreateQueue extends Command {
 
 		this.permissions.add(PermissionFlagsBits.ManageGuild);
 
+		this.description = 'Creates a new queue channel';
 		this.arguments.push(
 			new Argument({
 				name: 'name',

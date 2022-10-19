@@ -5,6 +5,7 @@ import {
 } from '@handlers/queue';
 import { EventHandler, Handler, embed, message } from '@matteopolak/framecord';
 import { Game, GameState, PickedPlayer } from '@prisma/client';
+import { forgeMember } from '@util/forge';
 import { iter } from '@util/iter';
 import { playersToFields } from '@util/message';
 import { gameConfig } from 'config';
@@ -16,8 +17,12 @@ import {
 	DMChannel,
 	Guild,
 	GuildBasedChannel,
+	GuildTextBasedChannel,
 	NonThreadGuildBasedChannel,
+	OverwriteResolvable,
+	OverwriteType,
 	PermissionsBitField,
+	VoiceBasedChannel,
 } from 'discord.js';
 import { inPlaceSort } from 'fast-sort';
 
@@ -32,6 +37,13 @@ function isCategoryChannel(
 }
 
 const MAX_CHANNELS_PER_CATEGORY = 50;
+
+const DEFAULT_VOICE_ALLOW_PERMISSIONS =
+	PermissionsBitField.Flags.Connect &
+	PermissionsBitField.Flags.UseVAD &
+	PermissionsBitField.Flags.Speak &
+	PermissionsBitField.Flags.ViewChannel;
+
 const DEFAULT_TEXT_ALLOW_PERMISSIONS =
 	PermissionsBitField.Flags.ViewChannel &
 	PermissionsBitField.Flags.SendMessages &
@@ -39,11 +51,11 @@ const DEFAULT_TEXT_ALLOW_PERMISSIONS =
 	PermissionsBitField.Flags.AddReactions;
 
 export class GameManager extends Handler {
-	protected categories: Collection<
+	protected static categories: Collection<
 		string,
 		Collection<string, CategoryChannel>
 	> = new Collection();
-	protected number = 0;
+	protected static number = 0;
 
 	public async init() {
 		const categories = await prisma.category.findMany();
@@ -54,9 +66,9 @@ export class GameManager extends Handler {
 			)
 			.filter(isCategoryChannel)
 			.tap(c =>
-				this.categories.has(c.guildId)
-					? this.categories.get(c.guildId)!.set(c.id, c)
-					: this.categories.set(c.guildId, new Collection([[c.id, c]])),
+				GameManager.categories.has(c.guildId)
+					? GameManager.categories.get(c.guildId)!.set(c.id, c)
+					: GameManager.categories.set(c.guildId, new Collection([[c.id, c]])),
 			)
 			.map(c => c.id)
 			.toArray();
@@ -77,10 +89,10 @@ export class GameManager extends Handler {
 			},
 		});
 
-		this.number = number?.id ?? 0;
+		GameManager.number = number?.id ?? 0;
 	}
 
-	public async getCategoryWithCapacity(guild: Guild, needed: number) {
+	public static async getCategoryWithCapacity(guild: Guild, needed: number) {
 		const categories =
 			this.categories.get(guild.id) ??
 			this.categories.set(guild.id, new Collection()).get(guild.id)!;
@@ -114,7 +126,7 @@ export class GameManager extends Handler {
 	 * @param queue
 	 * @param parties *Will* be mutated, do not expect to be able to re-use this array or any of its elements
 	 */
-	public createTeams(
+	public static createTeams(
 		queue: QueueList,
 		parties: PartyWithMemberProfiles[],
 	): {
@@ -185,19 +197,19 @@ export class GameManager extends Handler {
 		};
 	}
 
-	public reservePlayers(players: Iterable<string>) {
+	public static reservePlayers(players: Iterable<string>) {
 		for (const player of players) {
 			reservedIds.add(player);
 		}
 	}
 
-	public releasePlayers(players: Iterable<string>) {
+	public static releasePlayers(players: Iterable<string>) {
 		for (const player of players) {
 			reservedIds.delete(player);
 		}
 	}
 
-	public reserveParties(parties: PartyWithMemberProfiles[]) {
+	public static reserveParties(parties: PartyWithMemberProfiles[]) {
 		return this.reservePlayers(
 			iter(parties)
 				.flatMap(p => p.members)
@@ -205,7 +217,7 @@ export class GameManager extends Handler {
 		);
 	}
 
-	public releaseParties(parties: PartyWithMemberProfiles[]) {
+	public static releaseParties(parties: PartyWithMemberProfiles[]) {
 		return this.releasePlayers(
 			iter(parties)
 				.flatMap(p => p.members)
@@ -213,20 +225,21 @@ export class GameManager extends Handler {
 		);
 	}
 
-	public async createGame(
+	public static movePlayer(userId: string, channel: VoiceBasedChannel) {
+		return forgeMember(channel.guild, userId)
+			.voice.setChannel(channel)
+			.then(() => true)
+			.catch(() => false);
+	}
+
+	public static async createGameChannels(
 		queue: QueueList,
-		parties: PartyWithMemberProfiles[],
 		guild: Guild,
+		parties: PartyWithMemberProfiles[],
+		gameId: number,
 	) {
-		// Lock the players
-
-		const category = await this.getCategoryWithCapacity(
-			guild,
-			gameConfig[queue.mode].teams + 1,
-		);
-
-		const gameId = this.number++;
-		const data = this.createTeams(queue, parties);
+		const teamCount = gameConfig[queue.mode].teams;
+		const category = await this.getCategoryWithCapacity(guild, teamCount + 1);
 
 		const text = await category.children.create({
 			name: `Game #${gameId}`,
@@ -240,6 +253,74 @@ export class GameManager extends Handler {
 				.toArray(),
 		});
 
+		const permissions: OverwriteResolvable[][] = Array.from(
+			{ length: teamCount },
+			() => [],
+		);
+
+		for (const [index, party] of parties.entries()) {
+			if (index < teamCount) {
+				permissions[index] = iter(party.members)
+					.map(m => ({
+						id: m.id,
+						type: OverwriteType.Member,
+						allow: DEFAULT_VOICE_ALLOW_PERMISSIONS,
+					}))
+					.toArray();
+			} else {
+				permissions[0].push(
+					...iter(party.members).map(m => ({
+						id: m.id,
+						type: OverwriteType.Member,
+						allow: DEFAULT_VOICE_ALLOW_PERMISSIONS,
+					})),
+				);
+			}
+		}
+
+		const voice = await Promise.all(
+			permissions.map((p, i) =>
+				category.children.create({
+					name: `Game #${gameId}, Team #${i + 1}`,
+					type: ChannelType.GuildVoice,
+					permissionOverwrites: p,
+				}),
+			),
+		);
+
+		return {
+			text,
+			voice,
+		};
+	}
+
+	public static async createGame(
+		queue: QueueList,
+		parties: PartyWithMemberProfiles[],
+		guild: Guild,
+	) {
+		// Lock the players
+		this.reserveParties(parties);
+
+		const gameId = this.number++;
+		const data = this.createTeams(queue, parties);
+
+		const { text, voice } = await this.createGameChannels(
+			queue,
+			guild,
+			parties,
+			gameId,
+		);
+
+		await Promise.all(
+			data.players
+				.concat(data.remaining.map(r => ({ userId: r, team: 0 })))
+				.map(p => this.movePlayer(p.userId, voice[p.team])),
+		);
+
+		// Unlock the players after they have been moved
+		this.releaseParties(parties);
+
 		const state =
 			data.remaining.length === 0
 				? GameState.BanningMaps
@@ -251,6 +332,9 @@ export class GameManager extends Handler {
 				state,
 				mode: queue.mode,
 				textChannelId: text.id,
+				voiceChannelIds: {
+					set: voice.map(v => v.id),
+				},
 				remainingIds: {
 					set: data.remaining,
 				},
@@ -313,13 +397,38 @@ export class GameManager extends Handler {
 		return nextIndex;
 	}
 
-	public async initializeGame(
+	public static async startGame(
+		game: GameWithPlayers,
+		text: GuildTextBasedChannel,
+	) {
+		await message(text, {
+			embeds: embed({
+				title: 'Game Started',
+				description: '...',
+			}).embeds,
+			content: iter(game.players)
+				.map(p => `<@${p.userId}>`)
+				.chunk(4)
+				.map(c => `\`/party ${c.join(' ')}`)
+				.toArray()
+				.join('\n'),
+		});
+
+		await prisma.game.update({
+			where: {
+				textChannelId: game.textChannelId,
+			},
+			data: {
+				state: GameState.Playing,
+			},
+		});
+	}
+
+	public static async initializeGame(
 		queue: QueueList,
 		parties: PartyWithMemberProfiles[],
+		guild: Guild,
 	) {
-		const guild = this.client.guilds.cache.get(queue.guildId);
-		if (!guild) return;
-
 		await this.createGame(queue, parties, guild);
 
 		// pick teams
@@ -332,6 +441,6 @@ export class GameManager extends Handler {
 	public async channelDelete(channel: DMChannel | NonThreadGuildBasedChannel) {
 		if (channel.type !== ChannelType.GuildCategory) return;
 
-		this.categories.delete(channel.id);
+		GameManager.categories.delete(channel.id);
 	}
 }

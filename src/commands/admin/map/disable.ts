@@ -7,11 +7,11 @@ import {
 } from '@matteopolak/framecord';
 import { prisma } from 'database';
 
-export default class DeleteMapCommand extends Command {
+export default class DisableMapCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 
-		this.description = 'Deletes a map';
+		this.description = 'Disables a map';
 		this.arguments.push(
 			new Argument({
 				type: ArgumentType.String,
@@ -23,15 +23,19 @@ export default class DeleteMapCommand extends Command {
 	}
 
 	public async run(_: CommandSource, name: string) {
-		const map = await prisma.map.deleteMany({
+		await prisma.map.update({
 			where: {
 				name_lower: name.toLowerCase(),
 			},
+			data: {
+				enabled: false,
+			},
 		});
 
-		if (map.count === 0)
-			throw `A map by the name of \`${name}\` does not exist.`;
+		return `Disabled the map by the name of \`${name}\`.`;
+	}
 
-		return `Deleted the map by the name of \`${name}\`.`;
+	public async catch(error: Error, source: CommandSource, name: string) {
+		throw `A map by the name of \`${name}\` does not exist.`;
 	}
 }
