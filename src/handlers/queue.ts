@@ -3,7 +3,7 @@ import { EventHandler, Handler } from '@matteopolak/framecord';
 import { Mode, Party, Profile, User } from '@prisma/client';
 import { iter } from '@util/iter';
 import { stdev } from '@util/math';
-import { GameConfig, gameConfig, queueConfig } from 'config';
+import { GameConfig, games, queues } from 'config';
 import { prisma } from 'database';
 import { ChannelType, VoiceState } from 'discord.js';
 import { inPlaceSort } from 'fast-sort';
@@ -14,8 +14,13 @@ export interface QueueList {
 	players: Set<string>;
 }
 
+export interface QueueData {
+	channelId: string;
+}
+
 export const queueToMode: Map<string, Mode> = new Map();
 export const modeAndGuildToQueueList: Map<string, QueueList> = new Map();
+export const modeAndGuildToQueueData: Map<string, QueueData[]> = new Map();
 export const reservedIds: Set<string> = new Set();
 
 export interface VoiceStateResolvable {
@@ -66,8 +71,8 @@ export default class QueueHandler extends Handler {
 		const guild = this.client.guilds.cache.get(queue.guildId);
 		if (guild === undefined) return;
 
-		const teamSize = gameConfig[queue.mode].playersPerTeam;
-		const size = teamSize * gameConfig[queue.mode].teams;
+		const teamSize = games[queue.mode].playersPerTeam;
+		const size = teamSize * games[queue.mode].teams;
 
 		const parties = await prisma.party.findMany({
 			where: {
@@ -144,8 +149,8 @@ export default class QueueHandler extends Handler {
 				slice.flatMap(s => s.members.map(m => m.profiles[0]?.rating ?? 0)),
 			);
 
-			if (deviation > queueConfig[queue.mode].maximumStdev) continue;
-			if (!this.isSliceValid(slice, gameConfig[queue.mode])) continue;
+			if (deviation > queues[queue.mode].maximumStdev) continue;
+			if (!this.isSliceValid(slice, games[queue.mode])) continue;
 
 			if (deviation < lowestStdev) {
 				lowest = slice;
@@ -219,6 +224,12 @@ export default class QueueHandler extends Handler {
 				continue;
 			}
 
+			const key = `${queue.guildId}.${queue.mode}`;
+			const data =
+				modeAndGuildToQueueData.get(key) ??
+				modeAndGuildToQueueData.set(key, []).get(key)!;
+
+			data.push({ channelId: queue.id });
 			queueToMode.set(queue.id, queue.mode);
 
 			for (const [, member] of channel.members) {

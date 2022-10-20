@@ -1,6 +1,7 @@
 import {
 	PartyWithMemberProfiles,
 	QueueList,
+	modeAndGuildToQueueData,
 	reservedIds,
 } from '@handlers/queue';
 import { EventHandler, Handler, embed, message } from '@matteopolak/framecord';
@@ -8,7 +9,7 @@ import { Game, GameState, PickedPlayer } from '@prisma/client';
 import { member } from '@util/forge';
 import { iter } from '@util/iter';
 import { playersToFields } from '@util/message';
-import { gameConfig } from 'config';
+import { games } from 'config';
 import { prisma } from 'database';
 import {
 	CategoryChannel,
@@ -134,7 +135,7 @@ export class GameManager extends Handler {
 		remaining: string[];
 		players: Omit<PickedPlayer, 'gameId'>[];
 	} {
-		const config = gameConfig[queue.mode];
+		const config = games[queue.mode];
 		const captains: string[] = [];
 
 		// Sort parties by member count, then by average rating if they're equal
@@ -241,7 +242,7 @@ export class GameManager extends Handler {
 		parties: PartyWithMemberProfiles[],
 		gameId: number,
 	) {
-		const teamCount = gameConfig[queue.mode].teams;
+		const teamCount = games[queue.mode].teams;
 		const category = await this.getCategoryWithCapacity(guild, teamCount + 1);
 
 		const text = await category.children.create({
@@ -369,6 +370,44 @@ export class GameManager extends Handler {
 		}
 	}
 
+	public static async close(
+		game: Game,
+		guild: Guild,
+		channel: GuildTextBasedChannel,
+		reason: string,
+	) {
+		message(
+			channel,
+			embed({
+				title: 'Game Finished',
+				description: `Want to play again?\n${
+					modeAndGuildToQueueData
+						.get(`${guild.id}.${game.mode}`)
+						?.map(q => `<@${q.channelId}>`)
+						.join('\n') || 'No queue channels found :('
+				}`,
+				fields: [
+					{
+						name: 'Reason',
+						value: reason,
+					},
+				],
+			}),
+		);
+
+		return setTimeout(() => {
+			guild.channels
+				.delete(game.textChannelId, `Closing game #${game.id}`)
+				.catch(() => null);
+
+			for (const voiceId of game.voiceChannelIds) {
+				guild.channels
+					.delete(voiceId, `Closing game #${game.id}`)
+					.catch(() => null);
+			}
+		}, 5_000);
+	}
+
 	public static calculateNextPick(lastIndex: number, game: GameWithPlayers) {
 		const { nextIndex } = game.players.reduce(
 			(a, b) => {
@@ -378,7 +417,7 @@ export class GameManager extends Handler {
 					a.map[b.team] = 1;
 				}
 
-				if (a.map[b.team] === gameConfig[game.mode].playersPerTeam) return a;
+				if (a.map[b.team] === games[game.mode].playersPerTeam) return a;
 
 				if (
 					a.map[b.team] < a.count ||

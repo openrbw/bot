@@ -11,7 +11,7 @@ export interface QueueConfig {
 	maximumStdev: number;
 }
 
-export const gameConfig: Record<Mode, GameConfig> = {
+export const games: Record<Mode, GameConfig> = {
 	[Mode.Open]: {
 		teams: 2,
 		playersPerTeam: 4,
@@ -32,7 +32,7 @@ export const gameConfig: Record<Mode, GameConfig> = {
 	},
 };
 
-export const queueConfig: Record<Mode, QueueConfig> = {
+export const queues: Record<Mode, QueueConfig> = {
 	[Mode.Open]: {
 		maximumStdev: Infinity,
 	},
@@ -41,5 +41,12 @@ export const queueConfig: Record<Mode, QueueConfig> = {
 	},
 	[Mode.Ranked]: {
 		maximumStdev: 2,
+	},
+};
+
+export const channels = {
+	scoring: {
+		guildId: '968627637444558918',
+		channelId: '1015327471102611586',
 	},
 };

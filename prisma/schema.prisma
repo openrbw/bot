@@ -55,6 +55,7 @@ model PickedPlayer {
   team   Int    @db.SmallInt
   game   Game   @relation(fields: [gameId], references: [id])
   gameId Int
+  user   User   @relation(fields: [userId], references: [id])
 
   @@id([userId, gameId])
   @@index([userId])
@@ -91,15 +92,16 @@ model Faction {
 }
 
 model User {
-  id        String    @id
+  id        String         @id
   profiles  Profile[]
-  uuid      String    @unique @db.Uuid
+  uuid      String         @unique @db.Uuid
   username  String
-  faction   Faction?  @relation(fields: [factionId], references: [leaderId])
+  faction   Faction?       @relation(fields: [factionId], references: [leaderId])
   factionId String?
-  createdAt DateTime  @default(now())
-  party     Party     @relation(fields: [partyId], references: [leaderId])
+  createdAt DateTime       @default(now())
+  party     Party          @relation(fields: [partyId], references: [leaderId])
   partyId   String
+  picks     PickedPlayer[]
 }
 
 model Profile {

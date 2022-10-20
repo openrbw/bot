@@ -5,6 +5,7 @@
 	"main": "dist/index.js",
 	"scripts": {
 		"build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
+		"check": "tsc --project tsconfig.json --noEmit",
 		"start": "yarn run build && node dist/index.js"
 	},
 	"repository": {
@@ -12,7 +13,7 @@
 		"url": "git+https://github.com/matteopolak/ranked-bedwars.git"
 	},
 	"author": "Matthew Polak <contact@matteopolak.com>",
-	"license": "GPL3",
+	"license": "GPL-3.0",
 	"bugs": {
 		"url": "https://github.com/matteopolak/ranked-bedwars/issues"
 	},
