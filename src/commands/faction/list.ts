@@ -7,15 +7,15 @@ import {
 import { prisma } from 'database';
 import { APIEmbed } from 'discord.js';
 
-export default class PartyListCommand extends Command {
+export default class FactionListCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 
-		this.description = 'Lists the players in your party.';
+		this.description = 'Lists the players in your faction.';
 	}
 
 	public async run(source: CommandSource) {
-		const party = await prisma.party.findFirst({
+		const faction = await prisma.faction.findFirst({
 			where: {
 				members: {
 					some: {
@@ -28,29 +28,29 @@ export default class PartyListCommand extends Command {
 			},
 		});
 
-		if (party === null) throw 'You are not in a party.';
+		if (faction === null) throw 'You are not in a faction.';
 
 		const leader =
-			party.leaderId === source.user.id
+			faction.leaderId === source.user.id
 				? source.user
 				: await this.client.users
-						.fetch(party.leaderId, { cache: false })
+						.fetch(faction.leaderId, { cache: false })
 						.catch(() => null);
 
 		const data: APIEmbed = {
 			fields: [
 				{
-					name: `Members (${party.members.length})`,
-					value: party.members.map(m => `<@${m.id}>`).join('\n'),
+					name: `Members (${faction.members.length})`,
+					value: faction.members.map(m => `<@${m.id}>`).join('\n'),
 				},
 			],
 		};
 
 		if (leader === null) {
-			data.description = `<@${party.leaderId}>'s Party`;
+			data.description = `<@${faction.leaderId}>'s Faction`;
 		} else {
 			data.author = {
-				name: `${leader.tag}'s Party`,
+				name: `${leader.tag}'s Faction`,
 				icon_url: leader.displayAvatarURL(),
 			};
 		}

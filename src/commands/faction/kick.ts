@@ -8,22 +8,22 @@ import {
 import { prisma } from 'database';
 import { User } from 'discord.js';
 
-export default class PartyKickCommand extends Command {
+export default class FactionKickCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 
-		this.description = 'Kicks a member from your party.';
+		this.description = 'Kicks a member from your faction.';
 		this.arguments.push(
 			new Argument({
 				type: ArgumentType.User,
 				name: 'user',
-				description: 'The user to kick from the party',
+				description: 'The user to kick from the faction',
 			}),
 		);
 	}
 
 	public async run(source: CommandSource, user: User) {
-		const party = await prisma.party.findFirst({
+		const faction = await prisma.faction.findFirst({
 			where: {
 				members: {
 					some: {
@@ -36,20 +36,20 @@ export default class PartyKickCommand extends Command {
 			},
 		});
 
-		if (party === null) throw 'You are not in a party.';
-		if (party.leaderId !== source.user.id)
-			throw `Only the party leader, <@${party.leaderId}>, can kick party members.`;
+		if (faction === null) throw 'You are not in a faction.';
+		if (faction.leaderId !== source.user.id)
+			throw `Only the faction leader, <@${faction.leaderId}>, can kick faction members.`;
 		if (source.user.id === user.id)
-			throw 'You cannot kick yourself from the party.';
-		if (!party.members.some(m => m.id === user.id))
-			throw `${user} cannot be kicked as they are not a member of the party.`;
+			throw 'You cannot kick yourself from the faction.';
+		if (!faction.members.some(m => m.id === user.id))
+			throw `${user} cannot be kicked as they are not a member of the faction.`;
 
 		await prisma.user.update({
 			where: {
 				id: user.id,
 			},
 			data: {
-				party: {
+				faction: {
 					create: {
 						leaderId: user.id,
 					},
@@ -57,6 +57,6 @@ export default class PartyKickCommand extends Command {
 			},
 		});
 
-		return `You have kicked ${user} from the party.`;
+		return `You have kicked ${user} from the faction.`;
 	}
 }

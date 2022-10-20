@@ -81,8 +81,9 @@ model Game {
 }
 
 model Faction {
-  id         String   @id @default(uuid()) @db.Uuid
+  leaderId   String   @id
   members    User[]
+  invites    String[]
   experience Int      @default(0)
   createdAt  DateTime @default(now())
 }
@@ -92,7 +93,7 @@ model User {
   profiles  Profile[]
   uuid      String    @unique @db.Uuid
   username  String
-  faction   Faction?  @relation(fields: [factionId], references: [id])
+  faction   Faction?  @relation(fields: [factionId], references: [leaderId])
   factionId String?   @db.Uuid
   createdAt DateTime  @default(now())
   party     Party     @relation(fields: [partyId], references: [leaderId])

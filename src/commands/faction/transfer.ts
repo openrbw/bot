@@ -8,22 +8,23 @@ import {
 import { prisma } from 'database';
 import { User } from 'discord.js';
 
-export default class PartyTransferCommand extends Command {
+export default class FactionTransferCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 
-		this.description = 'Transfers leadership of your party to another player.';
+		this.description =
+			'Transfers leadership of your faction to another player.';
 		this.arguments.push(
 			new Argument({
 				type: ArgumentType.User,
 				name: 'user',
-				description: 'The user to transfer the party to',
+				description: 'The user to transfer the faction to',
 			}),
 		);
 	}
 
 	public async run(source: CommandSource, user: User) {
-		const party = await prisma.party.findFirst({
+		const faction = await prisma.faction.findFirst({
 			where: {
 				members: {
 					some: {
@@ -36,14 +37,14 @@ export default class PartyTransferCommand extends Command {
 			},
 		});
 
-		if (party === null) throw 'You are not in a party.';
-		if (party.leaderId !== source.user.id)
-			throw `Only the party leader, <@${party.leaderId}>, can transfer leadership of the party.`;
-		if (!party.members.some(m => m.id === user.id))
-			throw `Party leadership cannot be transferred to ${user} as they are not a member of the party.`;
+		if (faction === null) throw 'You are not in a faction.';
+		if (faction.leaderId !== source.user.id)
+			throw `Only the faction leader, <@${faction.leaderId}>, can transfer leadership of the faction.`;
+		if (!faction.members.some(m => m.id === user.id))
+			throw `Faction leadership cannot be transferred to ${user} as they are not a member of the faction.`;
 
 		await prisma.$transaction([
-			prisma.party.update({
+			prisma.faction.update({
 				where: {
 					leaderId: user.id,
 				},
@@ -56,7 +57,7 @@ export default class PartyTransferCommand extends Command {
 					id: source.user.id,
 				},
 				data: {
-					party: {
+					faction: {
 						create: {
 							leaderId: source.user.id,
 						},
@@ -65,7 +66,7 @@ export default class PartyTransferCommand extends Command {
 			}),
 		]);
 
-		return `You have transferred leadership of your party to ${user}.`;
+		return `You have transferred leadership of your faction to ${user}.`;
 	}
 
 	async catch(error: Error) {

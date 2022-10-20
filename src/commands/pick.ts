@@ -16,7 +16,7 @@ export default class PickCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 
-		this.description = 'Picks a player during the picking stage';
+		this.description = 'Picks a player during the picking stage.';
 		this.arguments.push(
 			new Argument({
 				type: ArgumentType.User,

@@ -18,7 +18,7 @@ export default class RegisterCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 
-		this.description = 'Links your Discord account with a Minecraft account';
+		this.description = 'Links your Discord account with a Minecraft account.';
 		this.arguments.push(
 			new Argument({
 				name: 'code',

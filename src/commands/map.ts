@@ -16,7 +16,7 @@ export default class MapCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 
-		this.description = 'Bans a map during the banning stage';
+		this.description = 'Bans a map during the map banning stage.';
 		this.arguments.push(
 			new Argument({
 				type: ArgumentType.String,

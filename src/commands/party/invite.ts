@@ -12,6 +12,7 @@ export default class PartyInviteCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 
+		this.description = 'Invites a player to your party.';
 		this.arguments.push(
 			new Argument({
 				type: ArgumentType.User,

@@ -4,6 +4,8 @@ import { prisma } from 'database';
 export default class PartyDisbandCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
+
+		this.description = 'Disbands your party.';
 	}
 
 	public async run(source: CommandSource) {

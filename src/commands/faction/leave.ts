@@ -1,15 +1,15 @@
 import { Command, CommandOptions, CommandSource } from '@matteopolak/framecord';
 import { prisma } from 'database';
 
-export default class PartyLeaveCommand extends Command {
+export default class FactionLeaveCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 
-		this.description = 'Leaves your current party.';
+		this.description = 'Leaves your current faction.';
 	}
 
 	public async run(source: CommandSource) {
-		const party = await prisma.party.findFirst({
+		const faction = await prisma.faction.findFirst({
 			where: {
 				members: {
 					some: {
@@ -22,16 +22,16 @@ export default class PartyLeaveCommand extends Command {
 			},
 		});
 
-		if (party === null) throw 'You are not in a party.';
-		if (party.leaderId === source.user.id)
-			throw 'You cannot leave a party you are a leader of. Use `/party disband` or `/party transfer <user>` instead.';
+		if (faction === null) throw 'You are not in a faction.';
+		if (faction.leaderId === source.user.id)
+			throw 'You cannot leave a faction you are a leader of. Use `/faction disband` or `/faction transfer <user>` instead.';
 
 		await prisma.user.update({
 			where: {
 				id: source.user.id,
 			},
 			data: {
-				party: {
+				faction: {
 					create: {
 						leaderId: source.user.id,
 					},
@@ -39,6 +39,6 @@ export default class PartyLeaveCommand extends Command {
 			},
 		});
 
-		return `You have left <@${party.leaderId}>'s party of **${party.members.length} players**.`;
+		return `You have left <@${faction.leaderId}>'s faction of **${faction.members.length} players**.`;
 	}
 }
