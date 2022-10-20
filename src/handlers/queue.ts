@@ -66,6 +66,9 @@ export default class QueueHandler extends Handler {
 		const guild = this.client.guilds.cache.get(queue.guildId);
 		if (guild === undefined) return;
 
+		const teamSize = gameConfig[queue.mode].playersPerTeam;
+		const size = teamSize * gameConfig[queue.mode].teams;
+
 		const parties = await prisma.party.findMany({
 			where: {
 				members: {
@@ -93,9 +96,31 @@ export default class QueueHandler extends Handler {
 			},
 		});
 
+		// Get the party count beforehand so the newly-created parties
+		// are not checked
+		const rawPartyCount = parties.length;
+
+		for (let i = 0; i < rawPartyCount; ++i) {
+			const party = parties[i];
+
+			// If the party is too large, split them up until they are at most
+			// the size of one team
+			if (party.members.length > teamSize) {
+				inPlaceSort(party.members).desc(m => m.profiles[0]?.rating ?? 0);
+
+				while (party.members.length > teamSize) {
+					const split = party.members.splice(0, teamSize);
+
+					parties.push({
+						leaderId: party.leaderId,
+						invites: [],
+						members: split,
+					});
+				}
+			}
+		}
+
 		const partyCount = parties.length;
-		const size =
-			gameConfig[queue.mode].teams * gameConfig[queue.mode].playersPerTeam;
 
 		let lowest: PartyWithMemberProfiles[] = [];
 		let lowestStdev = Infinity;

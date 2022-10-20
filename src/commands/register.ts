@@ -14,7 +14,7 @@ import {
 import { prisma } from 'database';
 import { escapeMarkdown } from 'discord.js';
 
-export default class Register extends Command {
+export default class RegisterCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 

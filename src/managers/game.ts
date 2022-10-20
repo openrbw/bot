@@ -5,7 +5,7 @@ import {
 } from '@handlers/queue';
 import { EventHandler, Handler, embed, message } from '@matteopolak/framecord';
 import { Game, GameState, PickedPlayer } from '@prisma/client';
-import { forgeMember } from '@util/forge';
+import { member } from '@util/forge';
 import { iter } from '@util/iter';
 import { playersToFields } from '@util/message';
 import { gameConfig } from 'config';
@@ -225,11 +225,14 @@ export class GameManager extends Handler {
 		);
 	}
 
-	public static movePlayer(userId: string, channel: VoiceBasedChannel) {
-		return forgeMember(channel.guild, userId)
-			.voice.setChannel(channel)
-			.then(() => true)
-			.catch(() => false);
+	public static async movePlayer(userId: string, channel: VoiceBasedChannel) {
+		try {
+			await member(userId, channel.guild).voice.setChannel(channel);
+
+			return true;
+		} catch {
+			return false;
+		}
 	}
 
 	public static async createGameChannels(

@@ -7,11 +7,13 @@ import {
 	embed,
 } from '@matteopolak/framecord';
 import { prisma } from 'database';
-import { Attachment } from 'discord.js';
+import { Attachment, PermissionFlagsBits } from 'discord.js';
 
 export default class CreateMapCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
+
+		this.permissions.add(PermissionFlagsBits.ManageGuild);
 
 		this.description = 'Creates a new map';
 		this.arguments.push(

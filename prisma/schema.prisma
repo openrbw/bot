@@ -31,8 +31,9 @@ model Category {
 }
 
 model Party {
-  leaderId String @id
+  leaderId String   @id
   members  User[]
+  invites  String[]
 }
 
 model Queue {

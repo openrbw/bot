@@ -39,6 +39,9 @@ export default class MapCommand extends Command {
 			where: {
 				textChannelId: source.channelId,
 			},
+			include: {
+				players: true,
+			},
 		});
 
 		if (game === null) throw 'This command can only be run in a game channel.';
@@ -75,7 +78,7 @@ export default class MapCommand extends Command {
 		);
 
 		if (game.captainMapBans.length + 1 === game.captains.length) {
-			GameManager.startGame(game, source.channel);
+			GameManager.startGame(game, source.channel!);
 		}
 	}
 }

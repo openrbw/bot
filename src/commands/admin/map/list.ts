@@ -1,10 +1,13 @@
 import { Command, CommandOptions, embed } from '@matteopolak/framecord';
 import { iter } from '@util/iter';
 import { prisma } from 'database';
+import { PermissionFlagsBits } from 'discord.js';
 
 export default class ListMapCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
+
+		this.permissions.add(PermissionFlagsBits.ManageGuild);
 
 		this.description = 'Lists all of the maps';
 	}

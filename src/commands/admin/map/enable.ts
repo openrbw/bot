@@ -6,10 +6,13 @@ import {
 	CommandSource,
 } from '@matteopolak/framecord';
 import { prisma } from 'database';
+import { PermissionFlagsBits } from 'discord.js';
 
 export default class EnableMapCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
+
+		this.permissions.add(PermissionFlagsBits.ManageGuild);
 
 		this.description = 'Enables a map';
 		this.arguments.push(

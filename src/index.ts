@@ -9,11 +9,17 @@ dotenv.config();
 config.formatting.colour = 0xff0000;
 config.formatting.padFields = false;
 
-const client = new Client({
-	intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMembers],
-});
+(async () => {
+	const client = new Client({
+		intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMembers],
+	});
 
-client.compileCommandDirectory(join(__dirname, 'commands'));
-client.init();
+	await Promise.all([
+		client.compileCommandDirectory(join(__dirname, 'commands')),
+		client.compileHandlerDirectory(join(__dirname, 'handlers')),
+	]);
 
-client.login(process.env.TOKEN);
+	await client.init();
+
+	client.login(process.env.TOKEN);
+})();
