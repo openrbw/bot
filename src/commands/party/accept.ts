@@ -74,20 +74,17 @@ export default class PartyAcceptCommand extends Command {
 					invites: party.invites,
 				},
 			}),
-			prisma.party.update({
-				where: {
-					leaderId: source.user.id,
-				},
-				data: {
-					invites: [],
-				},
-			}),
 			prisma.user.update({
 				where: {
 					id: source.user.id,
 				},
 				data: {
 					partyId: party.leaderId,
+				},
+			}),
+			prisma.party.delete({
+				where: {
+					leaderId: source.user.id,
 				},
 			}),
 		]);

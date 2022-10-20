@@ -29,7 +29,11 @@ export default class PartyLeaveCommand extends Command {
 				id: source.user.id,
 			},
 			data: {
-				partyId: source.user.id,
+				party: {
+					create: {
+						leaderId: source.user.id,
+					},
+				},
 			},
 		});
 

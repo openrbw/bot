@@ -44,26 +44,10 @@ export default class PartyTransferCommand extends Command {
 		await prisma.$transaction([
 			prisma.party.update({
 				where: {
-					leaderId: source.user.id,
-				},
-				data: {
-					leaderId: `@${user.id}`,
-				},
-			}),
-			prisma.party.update({
-				where: {
 					leaderId: user.id,
 				},
 				data: {
 					leaderId: source.user.id,
-				},
-			}),
-			prisma.party.update({
-				where: {
-					leaderId: `@${user.id}`,
-				},
-				data: {
-					leaderId: user.id,
 				},
 			}),
 			prisma.user.update({
@@ -71,7 +55,11 @@ export default class PartyTransferCommand extends Command {
 					id: source.user.id,
 				},
 				data: {
-					partyId: source.user.id,
+					party: {
+						create: {
+							leaderId: source.user.id,
+						},
+					},
 				},
 			}),
 		]);

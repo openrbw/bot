@@ -48,7 +48,11 @@ export default class PartyKickCommand extends Command {
 				id: user.id,
 			},
 			data: {
-				partyId: user.id,
+				party: {
+					create: {
+						leaderId: user.id,
+					},
+				},
 			},
 		});
 

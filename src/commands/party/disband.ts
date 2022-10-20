@@ -31,7 +31,11 @@ export default class PartyDisbandCommand extends Command {
 						id: member.id,
 					},
 					data: {
-						partyId: member.id,
+						party: {
+							create: {
+								leaderId: member.id,
+							},
+						},
 					},
 				}),
 			),
