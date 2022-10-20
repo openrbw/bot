@@ -196,8 +196,6 @@ export default class QueueHandler extends Handler {
 
 	private async removePlayer(state: VoiceState) {
 		const mode = queueToMode.get(state.channelId!);
-		if (!mode) return;
-
 		const queue = modeAndGuildToQueueList.get(`${state.guild.id}.${mode}`);
 
 		queue?.players.delete(state.id);

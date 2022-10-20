@@ -52,6 +52,8 @@ const DEFAULT_TEXT_ALLOW_PERMISSIONS =
 	PermissionsBitField.Flags.AddReactions;
 
 export class GameManager extends Handler {
+	public static activeGames = 0;
+
 	protected static categories: Collection<
 		string,
 		Collection<string, CategoryChannel>
@@ -322,9 +324,6 @@ export class GameManager extends Handler {
 				.map(p => this.movePlayer(p.userId, voice[p.team])),
 		);
 
-		// Unlock the players after they have been moved
-		this.releaseParties(parties);
-
 		const state =
 			data.remaining.length === 0
 				? GameState.BanningMaps
@@ -371,11 +370,16 @@ export class GameManager extends Handler {
 	}
 
 	public static async close(
-		game: Game,
+		game: GameWithPlayers,
 		guild: Guild,
 		channel: GuildTextBasedChannel,
 		reason: string,
 	) {
+		--this.activeGames;
+
+		// Unlock the players after they have been moved
+		this.releasePlayers(iter(game.players).map(p => p.userId));
+
 		message(
 			channel,
 			embed({
@@ -471,6 +475,8 @@ export class GameManager extends Handler {
 		parties: PartyWithMemberProfiles[],
 		guild: Guild,
 	) {
+		++this.activeGames;
+
 		await this.createGame(queue, parties, guild);
 
 		// pick teams

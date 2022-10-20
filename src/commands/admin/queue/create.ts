@@ -10,7 +10,7 @@ import { Mode } from '@prisma/client';
 import { prisma } from 'database';
 import { ChannelType, PermissionFlagsBits } from 'discord.js';
 
-export default class CreateQueue extends Command {
+export default class CreateQueueCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 

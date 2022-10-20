@@ -10,7 +10,7 @@ import { Mode } from '@prisma/client';
 import { prisma } from 'database';
 import { ChannelType, PermissionFlagsBits } from 'discord.js';
 
-export default class DeleteQueue extends Command {
+export default class DeleteQueueCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 

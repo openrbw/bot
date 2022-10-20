@@ -50,3 +50,8 @@ export const channels = {
 		channelId: '1015327471102611586',
 	},
 };
+
+export const backend = {
+	updateCommand: ['git', ['pull', 'origin', 'main']] as const,
+	restartCommand: ['pm2', ['restart', 'main']] as const,
+};
