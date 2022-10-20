@@ -23,11 +23,7 @@
 			"prettier"
 	],
 	"rules": {
-			"indent": [
-					"warn",
-					"tab",
-					{ "flatTernaryExpressions": true, "offsetTernaryExpressions": true }
-			],
+			"indent": "off",
 			"linebreak-style": [
 					"error",
 					"unix"
