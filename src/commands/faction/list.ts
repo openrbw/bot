@@ -47,10 +47,10 @@ export default class FactionListCommand extends Command {
 		};
 
 		if (leader === null) {
-			data.description = `<@${faction.leaderId}>'s Faction`;
+			data.description = faction.name ?? `<@${faction.leaderId}>'s Faction`;
 		} else {
 			data.author = {
-				name: `${leader.tag}'s Faction`,
+				name: faction.name ?? `${leader.tag}'s Faction`,
 				icon_url: leader.displayAvatarURL(),
 			};
 		}

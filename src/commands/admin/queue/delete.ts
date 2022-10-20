@@ -10,38 +10,19 @@ import { Mode } from '@prisma/client';
 import { prisma } from 'database';
 import { ChannelType, PermissionFlagsBits } from 'discord.js';
 
-export default class CreateQueue extends Command {
+export default class DeleteQueue extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 
 		this.permissions.add(PermissionFlagsBits.ManageGuild);
 
-		this.description = 'Creates a new queue channel.';
+		this.description = 'Deletes an existing queue channel.';
 		this.arguments.push(
 			new Argument({
-				name: 'name',
-				description: 'The name of the queue',
-				type: ArgumentType.String,
-				maxLength: 100,
-			}),
-			new Argument({
-				name: 'mode',
-				description: 'The mode of the queue',
-				type: ArgumentType.String,
-				choices: [
-					{
-						name: 'Open',
-						value: Mode.Open,
-					},
-					{
-						name: 'Unranked',
-						value: Mode.Unranked,
-					},
-					{
-						name: 'Ranked',
-						value: Mode.Ranked,
-					},
-				],
+				name: 'channel',
+				description: 'The queue channel',
+				type: ArgumentType.Channel,
+				filter: c => c.type === ChannelType.GuildVoice,
 			}),
 		);
 	}

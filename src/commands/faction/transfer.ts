@@ -43,33 +43,22 @@ export default class FactionTransferCommand extends Command {
 		if (!faction.members.some(m => m.id === user.id))
 			throw `Faction leadership cannot be transferred to ${user} as they are not a member of the faction.`;
 
-		await prisma.$transaction([
-			prisma.faction.update({
-				where: {
-					leaderId: user.id,
-				},
-				data: {
-					leaderId: source.user.id,
-				},
-			}),
-			prisma.user.update({
-				where: {
-					id: source.user.id,
-				},
-				data: {
-					faction: {
-						create: {
-							leaderId: source.user.id,
+		await prisma.faction.update({
+			where: {
+				leaderId: source.user.id,
+			},
+			data: {
+				leaderId: user.id,
+				members: {
+					disconnect: [
+						{
+							id: source.user.id,
 						},
-					},
+					],
 				},
-			}),
-		]);
+			},
+		});
 
 		return `You have transferred leadership of your faction to ${user}.`;
-	}
-
-	async catch(error: Error) {
-		console.error(error);
 	}
 }

@@ -14,7 +14,7 @@ export default class DisableMapCommand extends Command {
 
 		this.permissions.add(PermissionFlagsBits.ManageGuild);
 
-		this.description = 'Disables a map';
+		this.description = 'Disables a map.';
 		this.arguments.push(
 			new Argument({
 				type: ArgumentType.String,

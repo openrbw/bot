@@ -15,7 +15,7 @@ export default class CreateMapCommand extends Command {
 
 		this.permissions.add(PermissionFlagsBits.ManageGuild);
 
-		this.description = 'Creates a new map';
+		this.description = 'Creates a new map.';
 		this.arguments.push(
 			new Argument({
 				type: ArgumentType.String,

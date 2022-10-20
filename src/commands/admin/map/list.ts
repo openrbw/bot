@@ -9,7 +9,7 @@ export default class ListMapCommand extends Command {
 
 		this.permissions.add(PermissionFlagsBits.ManageGuild);
 
-		this.description = 'Lists all of the maps';
+		this.description = 'Lists all of the maps.';
 	}
 
 	public async run() {

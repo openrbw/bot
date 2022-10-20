@@ -14,7 +14,7 @@ export default class DeleteMapCommand extends Command {
 
 		this.permissions.add(PermissionFlagsBits.ManageGuild);
 
-		this.description = 'Deletes a map';
+		this.description = 'Deletes a map.';
 		this.arguments.push(
 			new Argument({
 				type: ArgumentType.String,

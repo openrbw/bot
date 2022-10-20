@@ -70,11 +70,14 @@ CREATE TABLE "Game" (
 
 -- CreateTable
 CREATE TABLE "Faction" (
-    "id" UUID NOT NULL,
+    "leaderId" TEXT NOT NULL,
+    "name" TEXT,
+    "name_lower" TEXT,
+    "invites" TEXT[],
     "experience" INTEGER NOT NULL DEFAULT 0,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-    CONSTRAINT "Faction_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Faction_pkey" PRIMARY KEY ("leaderId")
 );
 
 -- CreateTable
@@ -82,7 +85,7 @@ CREATE TABLE "User" (
     "id" TEXT NOT NULL,
     "uuid" UUID NOT NULL,
     "username" TEXT NOT NULL,
-    "factionId" UUID,
+    "factionId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "partyId" TEXT NOT NULL,
 
@@ -126,13 +129,16 @@ CREATE INDEX "Game_textChannelId_idx" ON "Game"("textChannelId");
 CREATE INDEX "Game_voiceChannelIds_idx" ON "Game"("voiceChannelIds");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Faction_name_lower_key" ON "Faction"("name_lower");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "User_uuid_key" ON "User"("uuid");
 
 -- AddForeignKey
 ALTER TABLE "PickedPlayer" ADD CONSTRAINT "PickedPlayer_gameId_fkey" FOREIGN KEY ("gameId") REFERENCES "Game"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "User" ADD CONSTRAINT "User_factionId_fkey" FOREIGN KEY ("factionId") REFERENCES "Faction"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "User" ADD CONSTRAINT "User_factionId_fkey" FOREIGN KEY ("factionId") REFERENCES "Faction"("leaderId") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "User" ADD CONSTRAINT "User_partyId_fkey" FOREIGN KEY ("partyId") REFERENCES "Party"("leaderId") ON DELETE RESTRICT ON UPDATE CASCADE;
