@@ -135,8 +135,10 @@ export default class QueueHandler extends Handler {
 				inPlaceSort(party.members).desc(m => m.profiles[0]?.rating ?? 0);
 
 				while (party.members.length > teamSize) {
+					// Remove the first `teamSize` party members from the original party
 					const split = party.members.splice(0, teamSize);
 
+					// Then, put them into a new party
 					parties.push({
 						leaderId: party.leaderId,
 						invites: [],

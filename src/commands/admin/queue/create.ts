@@ -28,20 +28,10 @@ export default class CreateQueueCommand extends Command {
 				name: 'mode',
 				description: 'The mode of the queue',
 				type: ArgumentType.String,
-				choices: [
-					{
-						name: 'Open',
-						value: Mode.Open,
-					},
-					{
-						name: 'Unranked',
-						value: Mode.Unranked,
-					},
-					{
-						name: 'Ranked',
-						value: Mode.Ranked,
-					},
-				],
+				choices: Object.keys(Mode).map(m => ({
+					name: m,
+					value: m,
+				})),
 			}),
 		);
 	}
