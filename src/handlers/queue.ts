@@ -78,6 +78,27 @@ export default class QueueHandler extends Handler {
 			where: {
 				members: {
 					every: {
+						AND: [
+							{
+								NOT: {
+									bannedUntil: 0,
+								},
+							},
+							{
+								OR: [
+									{
+										bannedUntil: {
+											equals: null,
+										},
+									},
+									{
+										bannedUntil: {
+											lt: Date.now(),
+										},
+									},
+								],
+							},
+						],
 						id: {
 							in: iter(queue.players)
 								.filter(p => !reservedIds.has(p))

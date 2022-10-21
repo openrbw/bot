@@ -12,12 +12,15 @@ config.formatting.padFields = false;
 (async () => {
 	const client = new Client({
 		intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMembers],
+		verbose: false,
 	});
 
-	await Promise.all([
+	const [commandCount] = await Promise.all([
 		client.compileCommandDirectory(join(__dirname, 'commands')),
 		client.compileHandlerDirectory(join(__dirname, 'handlers')),
 	]);
+
+	console.log(`Loaded ${commandCount} commands`);
 
 	await client.init();
 

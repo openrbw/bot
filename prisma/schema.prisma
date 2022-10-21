@@ -89,16 +89,17 @@ model Faction {
 }
 
 model User {
-  id        String         @id
-  profiles  Profile[]
-  uuid      String         @unique @db.Uuid
-  username  String
-  faction   Faction?       @relation(fields: [factionId], references: [leaderId])
-  factionId String?
-  createdAt DateTime       @default(now())
-  party     Party          @relation(fields: [partyId], references: [leaderId])
-  partyId   String
-  picks     PickedPlayer[]
+  id          String         @id
+  bannedUntil BigInt?
+  profiles    Profile[]
+  uuid        String         @unique @db.Uuid
+  username    String
+  faction     Faction?       @relation(fields: [factionId], references: [leaderId])
+  factionId   String?
+  createdAt   DateTime       @default(now())
+  party       Party          @relation(fields: [partyId], references: [leaderId])
+  partyId     String
+  picks       PickedPlayer[]
 }
 
 model Profile {
