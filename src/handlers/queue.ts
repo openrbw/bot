@@ -48,6 +48,7 @@ export default class QueueHandler extends Handler {
 		this.client.registerHandler(this.manager);
 	}
 
+	/** Validates a group of players */
 	private async isSliceValid(
 		parties: PartyWithMemberProfiles[],
 		config: GameConfig,
@@ -67,6 +68,7 @@ export default class QueueHandler extends Handler {
 		return true;
 	}
 
+	/** Searches for a game in the specified queue list */
 	private async searchForGame(queue: QueueList) {
 		const guild = this.client.guilds.cache.get(queue.guildId);
 		if (guild === undefined) return;
@@ -186,6 +188,7 @@ export default class QueueHandler extends Handler {
 		return GameManager.initializeGame(queue, lowest, guild);
 	}
 
+	/** Adds a new player to the queue */
 	private async addPlayer(state: VoiceStateResolvable) {
 		if (state.channelId === null) return;
 
@@ -217,6 +220,7 @@ export default class QueueHandler extends Handler {
 		this.searchForGame(queue);
 	}
 
+	/** Removes a player from the queue */
 	private async removePlayer(state: VoiceState) {
 		const mode = queueToMode.get(state.channelId!);
 		const queue = modeAndGuildToQueueList.get(`${state.guild.id}.${mode}`);

@@ -4,6 +4,11 @@ import { inPlaceSort } from 'fast-sort';
 
 import { iter } from './iter';
 
+/**
+ *
+ * @param players The list of players
+ * @returns `EmbedField`s where the name is "Title #{team}" and the value is the user tags of the players on the team
+ */
 export function playersToFields(
 	players: Omit<PickedPlayer, 'gameId'>[],
 ): EmbedField[] {

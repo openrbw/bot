@@ -20,6 +20,7 @@ export interface AuthCodeResponse {
 	uuid: string;
 }
 
+/** Fetches authentication data from a code */
 export async function getPlayerData(code: number) {
 	const response = await axios.get<AuthResponse<AuthCodeResponse>>(
 		`https://api.mc-oauth.com/v1/code/${code}`,

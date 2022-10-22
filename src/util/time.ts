@@ -12,6 +12,11 @@ export const CHAR_TO_TIME_TABLE: Record<string, number> = {
 	y: 1_000 * 60 * 60 * 24 * 365,
 };
 
+/**
+ *
+ * @param time The formatted time string: "1ms 1s 1m 1h 1d 1w 1mo 1y"
+ * @returns The parsed time in milliseconds
+ */
 export function parseTimeString(time: string) {
 	const matches = time.matchAll(TIME_PARSE_REGEX);
 

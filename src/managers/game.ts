@@ -95,6 +95,12 @@ export class GameManager extends Handler {
 		GameManager.number = number?.id ?? 0;
 	}
 
+	/**
+	 *
+	 * @param guild The guild in which the category should reside
+	 * @param needed The number of channels that must be reserved
+	 * @returns
+	 */
 	public static async getCategoryWithCapacity(guild: Guild, needed: number) {
 		const categories =
 			this.categories.get(guild.id) ??
@@ -200,18 +206,21 @@ export class GameManager extends Handler {
 		};
 	}
 
+	/** Adds all of the players to the reversed list */
 	public static reservePlayers(players: Iterable<string>) {
 		for (const player of players) {
 			reservedIds.add(player);
 		}
 	}
 
+	/** Removes all of the players from the reversed list */
 	public static releasePlayers(players: Iterable<string>) {
 		for (const player of players) {
 			reservedIds.delete(player);
 		}
 	}
 
+	/** Adds all party members to the reserved list */
 	public static reserveParties(parties: PartyWithMemberProfiles[]) {
 		return this.reservePlayers(
 			iter(parties)
@@ -220,6 +229,7 @@ export class GameManager extends Handler {
 		);
 	}
 
+	/** Removes all party members from the reserved list */
 	public static releaseParties(parties: PartyWithMemberProfiles[]) {
 		return this.releasePlayers(
 			iter(parties)
@@ -228,6 +238,7 @@ export class GameManager extends Handler {
 		);
 	}
 
+	/** Moves the player to the specified voice channel */
 	public static async movePlayer(userId: string, channel: VoiceBasedChannel) {
 		try {
 			await member(userId, channel.guild).voice.setChannel(channel);
@@ -238,6 +249,7 @@ export class GameManager extends Handler {
 		}
 	}
 
+	/** Creates the text channel and `teams` voice channels */
 	public static async createGameChannels(
 		queue: QueueList,
 		guild: Guild,
@@ -300,6 +312,7 @@ export class GameManager extends Handler {
 		};
 	}
 
+	/** Creates a new game */
 	public static async createGame(
 		queue: QueueList,
 		parties: PartyWithMemberProfiles[],
@@ -369,6 +382,7 @@ export class GameManager extends Handler {
 		}
 	}
 
+	/** Closes the game */
 	public static async close(
 		game: GameWithPlayers,
 		guild: Guild,
@@ -412,6 +426,7 @@ export class GameManager extends Handler {
 		}, 5_000);
 	}
 
+	/** Calculates the index for the next captain pick */
 	public static calculateNextPick(lastIndex: number, game: GameWithPlayers) {
 		const { nextIndex } = game.players.reduce(
 			(a, b) => {
@@ -443,6 +458,7 @@ export class GameManager extends Handler {
 		return nextIndex;
 	}
 
+	/** Starts the game */
 	public static async startGame(
 		game: GameWithPlayers,
 		text: GuildTextBasedChannel,
@@ -470,6 +486,7 @@ export class GameManager extends Handler {
 		});
 	}
 
+	/** Initializes a new game */
 	public static async initializeGame(
 		queue: QueueList,
 		parties: PartyWithMemberProfiles[],
