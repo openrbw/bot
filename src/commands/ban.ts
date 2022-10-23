@@ -80,7 +80,7 @@ export default class BanCommand extends Command {
 				type: ArgumentType.Boolean,
 				name: 'overwrite',
 				description:
-					"If true (default), the user's ban will be replaced with this one. If false, it will be increased by the duration provided.",
+					"If true (default), the user's ban will be replaced with this one.",
 				default: true,
 				required: false,
 			}),

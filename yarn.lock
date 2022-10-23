@@ -337,10 +337,10 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
-"@matteopolak/framecord@^1.4.2":
-  version "1.4.2"
-  resolved "https://registry.yarnpkg.com/@matteopolak/framecord/-/framecord-1.4.2.tgz#7d1ede3861dd6fa57ef8982a39334a00839fe32e"
-  integrity sha512-XJG+0Xx9byRjO5p1XlMudzGtVK+FG2flCABDlba0DKmr8YTESgn5xHEBA7qj81CBYugfnqxhQU+3Nny02O63OA==
+"@matteopolak/framecord@^1.4.5":
+  version "1.4.5"
+  resolved "https://registry.yarnpkg.com/@matteopolak/framecord/-/framecord-1.4.5.tgz#9fcc3dabb9f78837df28359118c4fd299cbb43b7"
+  integrity sha512-O8z7sOruI2RrjWXctm9y1nSuMf+iJ31m3i8WMoA/vxpcz4kWxEKio9jJaN9NLEP2Iaei5kr8TtmspysxAKC5cA==
   dependencies:
     discord.js "^14.6.0"
 

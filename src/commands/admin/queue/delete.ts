@@ -23,6 +23,7 @@ export default class DeleteQueueCommand extends Command {
 				description: 'The queue channel',
 				type: ArgumentType.Channel,
 				filter: c => c.type === ChannelType.GuildVoice,
+				error: 'You did not provide a voice channel.',
 			}),
 		);
 	}

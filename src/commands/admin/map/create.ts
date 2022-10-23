@@ -34,6 +34,9 @@ export default class CreateMapCommand extends Command {
 				type: ArgumentType.Attachment,
 				name: 'image',
 				description: 'An image of the map',
+				filter: a =>
+					a.contentType === 'image/png' || a.contentType === 'image/jpeg',
+				error: 'You did not provide a valid image.',
 			}),
 		);
 	}

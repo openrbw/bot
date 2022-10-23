@@ -22,7 +22,6 @@ export default class PickCommand extends Command {
 				type: ArgumentType.User,
 				name: 'player',
 				description: 'The player you want to pick',
-				required: true,
 			}),
 		);
 	}
