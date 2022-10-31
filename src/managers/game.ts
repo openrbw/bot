@@ -389,8 +389,6 @@ export class GameManager extends Handler {
 		channel: GuildTextBasedChannel,
 		reason: string,
 	) {
-		--this.activeGames;
-
 		// Unlock the players after they have been moved
 		this.releasePlayers(iter(game.players).map(p => p.userId));
 
@@ -413,16 +411,18 @@ export class GameManager extends Handler {
 			}),
 		);
 
-		return setTimeout(() => {
-			guild.channels
+		return setTimeout(async () => {
+			await guild.channels
 				.delete(game.textChannelId, `Closing game #${game.id}`)
 				.catch(() => null);
 
 			for (const voiceId of game.voiceChannelIds) {
-				guild.channels
+				await guild.channels
 					.delete(voiceId, `Closing game #${game.id}`)
 					.catch(() => null);
 			}
+
+			--this.activeGames;
 		}, 5_000);
 	}
 
