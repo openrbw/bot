@@ -13,32 +13,42 @@ export default class FactionLeaveCommand extends Command {
 			where: {
 				members: {
 					some: {
-						id: source.user.id,
+						discordId: source.user.id,
 					},
 				},
 			},
-			include: {
-				members: true,
+			select: {
+				id: true,
+				members: {
+					select: {
+						id: true,
+					},
+				},
+				leader: {
+					select: {
+						discordId: true,
+					},
+				},
 			},
 		});
 
 		if (faction === null) throw 'You are not in a faction.';
-		if (faction.leaderId === source.user.id)
+		if (faction.leader.discordId === source.user.id)
 			throw 'You cannot leave a faction you are a leader of. Use `/faction disband` or `/faction transfer <user>` instead.';
 
-		await prisma.user.update({
+		await prisma.faction.update({
 			where: {
-				id: source.user.id,
+				id: faction.id,
 			},
 			data: {
-				faction: {
-					create: {
-						leaderId: source.user.id,
+				members: {
+					disconnect: {
+						discordId: source.user.id,
 					},
 				},
 			},
 		});
 
-		return `You have left <@${faction.leaderId}>'s faction of **${faction.members.length} players**.`;
+		return `You have left <@${faction.leader.discordId}>'s faction of **${faction.members.length} players**.`;
 	}
 }

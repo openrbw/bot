@@ -18,7 +18,7 @@ export default class FactionKickCommand extends Command {
 				type: ArgumentType.User,
 				name: 'user',
 				description: 'The user to kick from the faction',
-			}),
+			})
 		);
 	}
 
@@ -27,31 +27,44 @@ export default class FactionKickCommand extends Command {
 			where: {
 				members: {
 					some: {
-						id: source.user.id,
+						discordId: source.user.id,
 					},
 				},
 			},
-			include: {
-				members: true,
+			select: {
+				id: true,
+				leader: {
+					select: {
+						discordId: true,
+					},
+				},
+				members: {
+					where: {
+						discordId: user.id,
+					},
+					select: {
+						discordId: true,
+					},
+				},
 			},
 		});
 
 		if (faction === null) throw 'You are not in a faction.';
-		if (faction.leaderId !== source.user.id)
-			throw `Only the faction leader, <@${faction.leaderId}>, can kick faction members.`;
+		if (faction.leader.discordId !== source.user.id)
+			throw `Only the faction leader, <@${faction.leader.discordId}>, can kick faction members.`;
 		if (source.user.id === user.id)
 			throw 'You cannot kick yourself from the faction.';
-		if (!faction.members.some(m => m.id === user.id))
+		if (!faction.members.some(m => m.discordId === user.id))
 			throw `${user} cannot be kicked as they are not a member of the faction.`;
 
-		await prisma.user.update({
+		await prisma.faction.update({
 			where: {
-				id: user.id,
+				id: faction.id,
 			},
 			data: {
-				faction: {
-					create: {
-						leaderId: user.id,
+				members: {
+					disconnect: {
+						discordId: user.id,
 					},
 				},
 			},

@@ -13,28 +13,36 @@ export default class PartyLeaveCommand extends Command {
 			where: {
 				members: {
 					some: {
-						id: source.user.id,
+						discordId: source.user.id,
 					},
 				},
 			},
-			include: {
-				members: true,
+			select: {
+				leader: {
+					select: {
+						discordId: true,
+					},
+				},
+				leaderId: true,
+				members: {
+					select: {
+						id: true,
+					},
+				},
 			},
 		});
 
 		if (party === null) throw 'You are not in a party.';
-		if (party.leaderId === source.user.id)
+		if (party.leader.discordId === source.user.id)
 			throw 'You cannot leave a party you are a leader of. Use `/party disband` or `/party transfer <user>` instead.';
 
 		await prisma.user.update({
 			where: {
-				id: source.user.id,
+				discordId: source.user.id,
 			},
 			data: {
 				party: {
-					create: {
-						leaderId: source.user.id,
-					},
+					disconnect: true,
 				},
 			},
 		});

@@ -19,23 +19,35 @@ export default class FactionListCommand extends Command {
 			where: {
 				members: {
 					some: {
-						id: source.user.id,
+						discordId: source.user.id,
 					},
 				},
 			},
-			include: {
-				members: true,
+			select: {
+				name: true,
+				leaderId: true,
+				leader: {
+					select: {
+						discordId: true,
+					},
+				},
+				members: {
+					select: {
+						id: true,
+						discordId: true,
+					},
+				},
 			},
 		});
 
 		if (faction === null) throw 'You are not in a faction.';
 
 		const leader =
-			faction.leaderId === source.user.id
+			faction.leader.discordId === source.user.id
 				? source.user
 				: await this.client.users
-						.fetch(faction.leaderId, { cache: false })
-						.catch(() => null);
+					.fetch(faction.leader.discordId, { cache: false })
+					.catch(() => null);
 
 		const data: APIEmbed = {
 			fields: [

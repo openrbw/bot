@@ -18,7 +18,7 @@ export function user(userId: string, client: Client) {
 export function channel(
 	channelId: string,
 	type: GuildChannelType,
-	guild: Guild,
+	guild: Guild
 ) {
 	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 	// @ts-ignore

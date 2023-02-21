@@ -13,22 +13,32 @@ export default class FactionDisbandCommand extends Command {
 			where: {
 				members: {
 					some: {
-						id: source.user.id,
+						discordId: source.user.id,
 					},
 				},
 			},
-			include: {
-				members: true,
+			select: {
+				id: true,
+				leader: {
+					select: {
+						discordId: true,
+					},
+				},
+				members: {
+					select: {
+						id: true,
+					},
+				},
 			},
 		});
 
 		if (faction === null) throw 'You are not in a faction.';
-		if (faction.leaderId !== source.user.id)
-			throw `Only the faction leader, <@${faction.leaderId}>, can disband the faction.`;
+		if (faction.leader.discordId !== source.user.id)
+			throw `Only the faction leader, <@${faction.leader.discordId}>, can disband the faction.`;
 
 		await prisma.faction.delete({
 			where: {
-				leaderId: source.user.id,
+				id: faction.id,
 			},
 		});
 

@@ -18,7 +18,7 @@ export default class PartyAcceptCommand extends Command {
 				type: ArgumentType.User,
 				name: 'user',
 				description: 'The user whose invite you want to accept',
-			}),
+			})
 		);
 	}
 
@@ -30,66 +30,74 @@ export default class PartyAcceptCommand extends Command {
 			where: {
 				members: {
 					some: {
-						id: user.id,
+						discordId: source.user.id,
+					},
+				},
+				invites: {
+					some: {
+						discordId: user.id,
+					},
+				},
+			},
+			select: {
+				id: true,
+				leader: {
+					select: {
+						discordId: true,
 					},
 				},
 			},
 		});
 
-		if (party === null) throw `${user} is not in a party.`;
-
-		const inviteIndex = party.invites.indexOf(source.user.id);
-
-		if (inviteIndex === -1)
-			throw `<@${party.leaderId}> has not invited you to their party.`;
+		if (party === null) throw `${user} has not invited you to their party.`;
 
 		const selfParty = await prisma.party.findFirst({
 			where: {
 				members: {
 					some: {
-						id: source.user.id,
+						discordId: source.user.id,
 					},
 				},
 			},
-			include: {
-				members: true,
+			select: {
+				members: {
+					select: {
+						id: true,
+					},
+				},
+				leader: {
+					select: {
+						discordId: true,
+					},
+				},
 			},
 		});
 
 		if (selfParty !== null) {
-			if (selfParty.leaderId !== source.user.id)
-				throw `You must leave your current party before accepting the invite to ${party.leaderId}'s party.`;
+			if (selfParty.leader.discordId !== source.user.id)
+				throw `You must leave your current party before accepting the invite to <@${party.leader.discordId}>'s party.`;
 			if (selfParty.members.length > 1)
-				throw `You must transfer leadership or disband your current party before accepting the invite to ${party.leaderId}'s party.`;
+				throw `You must transfer leadership or disband your current party before accepting the invite to <@${party.leader.discordId}>'s party.`;
 		}
 
-		// Remove the invite from the array
-		party.invites.splice(inviteIndex, 1);
+		await prisma.party.update({
+			where: {
+				id: party.id,
+			},
+			data: {
+				invites: {
+					disconnect: {
+						discordId: source.user.id,
+					},
+				},
+				members: {
+					connect: {
+						discordId: source.user.id,
+					},
+				},
+			},
+		});
 
-		await prisma.$transaction([
-			prisma.party.update({
-				where: {
-					leaderId: party.leaderId,
-				},
-				data: {
-					invites: party.invites,
-				},
-			}),
-			prisma.user.update({
-				where: {
-					id: source.user.id,
-				},
-				data: {
-					partyId: party.leaderId,
-				},
-			}),
-			prisma.party.delete({
-				where: {
-					leaderId: source.user.id,
-				},
-			}),
-		]);
-
-		return `You have accepted the invite to <@${party.leaderId}>'s party.`;
+		return `You have accepted the invite to <@${party.leader.discordId}>'s party.`;
 	}
 }

@@ -1,4 +1,3 @@
-import { queueToMode } from '@handlers/queue';
 import {
 	Argument,
 	ArgumentType,
@@ -6,7 +5,6 @@ import {
 	CommandOptions,
 	CommandSource,
 } from '@matteopolak/framecord';
-import { Mode } from '@prisma/client';
 import { prisma } from 'database';
 import { ChannelType, PermissionFlagsBits } from 'discord.js';
 
@@ -28,31 +26,42 @@ export default class CreateQueueCommand extends Command {
 				name: 'mode',
 				description: 'The mode of the queue',
 				type: ArgumentType.String,
-				choices: Object.keys(Mode).map(m => ({
-					name: m,
-					value: m,
-				})),
-			}),
+			})
 		);
 	}
 
-	public async run(source: CommandSource, name: string, mode: Mode) {
+	public async run(source: CommandSource, name: string, modeName: string) {
 		const channel = await source.guild.channels.create({
 			name,
 			type: ChannelType.GuildVoice,
 		});
 
-		await prisma.queue.create({
+		const queue = await prisma.queue.create({
 			data: {
-				id: channel.id,
+				channelId: channel.id,
 				guildId: channel.guildId,
-				mode,
+				mode: {
+					connectOrCreate: {
+						where: {
+							nameLower: modeName.toLowerCase(),
+						},
+						create: {
+							name: modeName,
+							nameLower: modeName.toLowerCase(),
+						},
+					},
+				},
+			},
+			select: {
+				mode: {
+					select: {
+						name: true,
+					},
+				},
 			},
 		});
 
-		queueToMode.set(channel.id, mode);
-
-		return `Successfully created the \`${mode}\` queue ${channel}.`;
+		return `Successfully created the \`${queue.mode.name}\` queue ${channel}.`;
 	}
 
 	public async catch() {

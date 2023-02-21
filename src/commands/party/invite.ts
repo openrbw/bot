@@ -16,53 +16,95 @@ export default class PartyInviteCommand extends Command {
 		this.arguments.push(
 			new Argument({
 				type: ArgumentType.User,
-				name: 'user',
-				description: 'The user to invite to the party',
-			}),
+				name: 'other',
+				description: 'The other to invite to the party',
+			})
 		);
 	}
 
-	public async run(source: CommandSource, user: User) {
-		if (source.user.id === user.id) throw 'You cannot invite yourself.';
+	public async run(source: CommandSource, other: User) {
+		if (source.user.id === other.id) throw 'You cannot invite yourself.';
 
-		const party = await prisma.party.findFirst({
+		// Create the user if they don't exist
+		await prisma.user.upsert({
 			where: {
-				leaderId: source.user.id,
+				discordId: source.user.id,
 			},
-			include: {
-				members: true,
-			},
-		});
-
-		if (party === null)
-			throw 'You must be registered in order to manage a party.';
-		if (party.leaderId !== source.user.id)
-			throw 'You must be the party leader in order to manage the party.';
-
-		const player = await prisma.user.findFirst({
-			where: {
-				id: user.id,
-			},
-		});
-
-		if (player === null)
-			throw `${user} must be registered in order to invite them to the party.`;
-		if (party.members.some(m => m.id === user.id))
-			throw `${user} is already in the party.`;
-		if (party.invites.includes(user.id))
-			throw `${user} has already been invited. They can use \`/party accept ${source.user.tag}\` to accept the invite.`;
-
-		await prisma.party.update({
-			where: {
-				leaderId: source.user.id,
-			},
-			data: {
-				invites: {
-					push: user.id,
+			update: {},
+			create: {
+				discordId: source.user.id,
+				party: {
+					create: {
+						leader: {
+							connect: {
+								discordId: source.user.id,
+							},
+						},
+					},
 				},
 			},
 		});
 
-		return `${user} has been invited to the party. They can use \`/party accept ${source.user.tag}\` to accept the invite.`;
+		const party = await prisma.party.findFirstOrThrow({
+			where: {
+				members: {
+					some: {
+						discordId: source.user.id,
+					},
+				},
+			},
+			select: {
+				id: true,
+				members: {
+					where: {
+						discordId: other.id,
+					},
+					select: {
+						discordId: true,
+					},
+				},
+				leader: {
+					select: {
+						discordId: true,
+					},
+				},
+				invites: {
+					where: {
+						discordId: other.id,
+					},
+					select: {
+						discordId: true,
+					},
+				},
+			},
+		});
+
+		if (party.leader.discordId !== source.user.id)
+			throw 'You must be the party leader in order to manage the party.';
+
+		if (party.members.some(m => m.discordId === other.id))
+			throw `${other} is already in the party.`;
+		if (party.invites.some(i => i.discordId === other.id))
+			throw `${other} has already been invited. They can use \`/party accept ${source.user.tag}\` to accept the invite.`;
+
+		await prisma.party.update({
+			where: {
+				id: party.id,
+			},
+			data: {
+				invites: {
+					connectOrCreate: {
+						where: {
+							discordId: other.id,
+						},
+						create: {
+							discordId: other.id,
+						},
+					},
+				},
+			},
+		});
+
+		return `${other} has been invited to the party. They can use \`/party accept ${source.user.tag}\` to accept the invite.`;
 	}
 }

@@ -1,15 +1,13 @@
 import {
+	modeAndGuildToQueueData,
 	PartyWithMemberProfiles,
 	QueueList,
-	modeAndGuildToQueueData,
 	reservedIds,
 } from '@handlers/queue';
-import { EventHandler, Handler, embed, message } from '@matteopolak/framecord';
-import { Game, GameState, PickedPlayer } from '@prisma/client';
+import { embed, EventHandler, Handler, message } from '@matteopolak/framecord';
+import { Game, GameUser, Mode, User } from '@prisma/client';
 import { member } from '@util/forge';
 import { iter } from '@util/iter';
-import { playersToFields } from '@util/message';
-import { games } from 'config';
 import { prisma } from 'database';
 import {
 	CategoryChannel,
@@ -27,12 +25,30 @@ import {
 } from 'discord.js';
 import { inPlaceSort } from 'fast-sort';
 
+export type GameWithModeNameAndPlayers = Game & {
+	users: GameUser[];
+	mode: Mode;
+};
+
+export type GameUserWithDiscordId = GameUser & {
+	user: Pick<User, 'discordId'>;
+};
+
+export type GameWithPlayersWithDiscordIds = Game & {
+	users: GameUserWithDiscordId[];
+};
+
+export type GameWithModeNameAndPlayersWithDiscordIds = Game & {
+	users: GameUserWithDiscordId[];
+	mode: Mode;
+};
+
 export type GameWithPlayers = Game & {
-	players: PickedPlayer[];
+	users: GameUser[];
 };
 
 function isCategoryChannel(
-	channel?: GuildBasedChannel,
+	channel?: GuildBasedChannel
 ): channel is CategoryChannel {
 	return channel?.type === ChannelType.GuildCategory;
 }
@@ -65,13 +81,13 @@ export class GameManager extends Handler {
 
 		const invalid = iter(categories)
 			.map(c =>
-				this.client.guilds.cache.get(c.guildId)?.channels.cache.get(c.id),
+				this.client.guilds.cache.get(c.guildId)?.channels.cache.get(c.id)
 			)
 			.filter(isCategoryChannel)
 			.tap(c =>
 				GameManager.categories.has(c.guildId)
 					? GameManager.categories.get(c.guildId)!.set(c.id, c)
-					: GameManager.categories.set(c.guildId, new Collection([[c.id, c]])),
+					: GameManager.categories.set(c.guildId, new Collection([[c.id, c]]))
 			)
 			.map(c => c.id)
 			.toArray();
@@ -101,13 +117,13 @@ export class GameManager extends Handler {
 	 * @param needed The number of channels that must be reserved
 	 * @returns
 	 */
-	public static async getCategoryWithCapacity(guild: Guild, needed: number) {
+	private static async getCategoryWithCapacity(guild: Guild, needed: number) {
 		const categories =
 			this.categories.get(guild.id) ??
 			this.categories.set(guild.id, new Collection()).get(guild.id)!;
 
 		const category = categories.find(
-			c => c.children.cache.size <= MAX_CHANNELS_PER_CATEGORY - needed,
+			c => c.children.cache.size <= MAX_CHANNELS_PER_CATEGORY - needed
 		);
 
 		if (category) return category;
@@ -135,16 +151,11 @@ export class GameManager extends Handler {
 	 * @param queue
 	 * @param parties *Will* be mutated, do not expect to be able to re-use this array or any of its elements
 	 */
-	public static createTeams(
+	private static createTeams(
 		queue: QueueList,
-		parties: PartyWithMemberProfiles[],
-	): {
-		captains: string[];
-		remaining: string[];
-		players: Omit<PickedPlayer, 'gameId'>[];
-	} {
-		const config = games[queue.mode];
-		const captains: string[] = [];
+		parties: PartyWithMemberProfiles[]
+	): Omit<GameUserWithDiscordId, 'gameId' | 'id'>[] {
+		const config = queue.mode;
 
 		// Sort parties by member count, then by average rating if they're equal
 		inPlaceSort(parties).desc([
@@ -157,7 +168,6 @@ export class GameManager extends Handler {
 		// This must work as parties cannot be larger than the size of a team
 		const teams = iter(parties)
 			.take(config.teams)
-			.tap(t => captains.push(t.members[0].id))
 			.toArray();
 
 		const [groups, individuals] = iter(parties)
@@ -167,7 +177,14 @@ export class GameManager extends Handler {
 		iter(groups).forEach(p =>
 			teams
 				.find(t => t.members.length + p.members.length <= config.playersPerTeam)
-				?.members.push(...p.members),
+				?.members.push(...p.members)
+		);
+
+		// Add every player to a team
+		iter(individuals).forEach(p =>
+			teams
+				.find(t => t.members.length + p.members.length <= config.playersPerTeam)
+				?.members.push(...p.members)
 		);
 
 		// Sort team members by rating
@@ -175,71 +192,52 @@ export class GameManager extends Handler {
 			inPlaceSort(team.members).desc(m => m.profiles[0]?.rating ?? 0);
 		}
 
-		if (config.teamPickingEnabled) {
-			return {
-				remaining: individuals.map(i => i.members[0].id),
-				players: teams.flatMap((t, tx) =>
-					t.members.map(m => ({
-						userId: m.id,
-						team: tx,
-					})),
-				),
-				captains,
-			};
-		}
-
-		iter(individuals).forEach(p =>
-			teams
-				.find(t => t.members.length + p.members.length <= config.playersPerTeam)
-				?.members.push(...p.members),
+		return teams.flatMap((t, tx) =>
+			t.members.map((m, i) => ({
+				userId: m.id,
+				user: {
+					discordId: m.discordId,
+				},
+				team: tx,
+				index: i,
+			}))
 		);
-
-		return {
-			remaining: [],
-			players: teams.flatMap((t, tx) =>
-				t.members.map(m => ({
-					userId: m.id,
-					team: tx,
-				})),
-			),
-			captains,
-		};
 	}
 
 	/** Adds all of the players to the reversed list */
-	public static reservePlayers(players: Iterable<string>) {
+	private static reservePlayers(players: Iterable<string>) {
 		for (const player of players) {
 			reservedIds.add(player);
 		}
 	}
 
 	/** Removes all of the players from the reversed list */
-	public static releasePlayers(players: Iterable<string>) {
+	private static releasePlayers(players: Iterable<string>) {
 		for (const player of players) {
 			reservedIds.delete(player);
 		}
 	}
 
 	/** Adds all party members to the reserved list */
-	public static reserveParties(parties: PartyWithMemberProfiles[]) {
+	private static reserveParties(parties: PartyWithMemberProfiles[]) {
 		return this.reservePlayers(
 			iter(parties)
 				.flatMap(p => p.members)
-				.map(m => m.id),
+				.map(m => m.discordId)
 		);
 	}
 
 	/** Removes all party members from the reserved list */
-	public static releaseParties(parties: PartyWithMemberProfiles[]) {
+	private static releaseParties(parties: PartyWithMemberProfiles[]) {
 		return this.releasePlayers(
 			iter(parties)
 				.flatMap(p => p.members)
-				.map(m => m.id),
+				.map(m => m.discordId)
 		);
 	}
 
 	/** Moves the player to the specified voice channel */
-	public static async movePlayer(userId: string, channel: VoiceBasedChannel) {
+	private static async movePlayer(userId: string, channel: VoiceBasedChannel) {
 		try {
 			await member(userId, channel.guild).voice.setChannel(channel);
 
@@ -250,13 +248,13 @@ export class GameManager extends Handler {
 	}
 
 	/** Creates the text channel and `teams` voice channels */
-	public static async createGameChannels(
+	private static async createGameChannels(
 		queue: QueueList,
 		guild: Guild,
 		parties: PartyWithMemberProfiles[],
-		gameId: number,
+		gameId: number
 	) {
-		const teamCount = games[queue.mode].teams;
+		const teamCount = queue.mode.teams;
 		const category = await this.getCategoryWithCapacity(guild, teamCount + 1);
 
 		const text = await category.children.create({
@@ -264,23 +262,23 @@ export class GameManager extends Handler {
 			permissionOverwrites: iter(parties)
 				.flatMap(p =>
 					p.members.map(m => ({
-						id: m.id,
+						id: m.discordId,
 						allow: DEFAULT_TEXT_ALLOW_PERMISSIONS,
-					})),
+					}))
 				)
 				.toArray(),
 		});
 
 		const permissions: OverwriteResolvable[][] = Array.from(
 			{ length: teamCount },
-			() => [],
+			() => []
 		);
 
 		for (const [index, party] of parties.entries()) {
 			if (index < teamCount) {
 				permissions[index] = iter(party.members)
 					.map(m => ({
-						id: m.id,
+						id: m.discordId,
 						type: OverwriteType.Member,
 						allow: DEFAULT_VOICE_ALLOW_PERMISSIONS,
 					}))
@@ -288,10 +286,10 @@ export class GameManager extends Handler {
 			} else {
 				permissions[0].push(
 					...iter(party.members).map(m => ({
-						id: m.id,
+						id: m.discordId,
 						type: OverwriteType.Member,
 						allow: DEFAULT_VOICE_ALLOW_PERMISSIONS,
-					})),
+					}))
 				);
 			}
 		}
@@ -302,8 +300,8 @@ export class GameManager extends Handler {
 					name: `Game #${gameId}, Team #${i + 1}`,
 					type: ChannelType.GuildVoice,
 					permissionOverwrites: p,
-				}),
-			),
+				})
+			)
 		);
 
 		return {
@@ -313,94 +311,68 @@ export class GameManager extends Handler {
 	}
 
 	/** Creates a new game */
-	public static async createGame(
+	private static async createGame(
 		queue: QueueList,
 		parties: PartyWithMemberProfiles[],
-		guild: Guild,
+		guild: Guild
 	) {
 		// Lock the players
 		this.reserveParties(parties);
 
 		const gameId = this.number++;
-		const data = this.createTeams(queue, parties);
+		const players = this.createTeams(queue, parties);
 
 		const { text, voice } = await this.createGameChannels(
 			queue,
 			guild,
 			parties,
-			gameId,
+			gameId
 		);
 
 		await Promise.all(
-			data.players
-				.concat(data.remaining.map(r => ({ userId: r, team: 0 })))
-				.map(p => this.movePlayer(p.userId, voice[p.team])),
+			players
+				.map(p => this.movePlayer(p.user.discordId, voice[p.team]))
 		);
 
-		const state =
-			data.remaining.length === 0
-				? GameState.BanningMaps
-				: GameState.PickingTeams;
-
-		const game = await prisma.game.create({
+		return await prisma.game.create({
 			data: {
 				id: gameId,
-				state,
-				mode: queue.mode,
+				stateId: queue.mode.states[0].id,
+				modeId: queue.modeId,
 				textChannelId: text.id,
 				voiceChannelIds: {
 					set: voice.map(v => v.id),
 				},
-				remainingIds: {
-					set: data.remaining,
-				},
-				captains: {
-					set: data.captains,
-				},
-				players: {
+				users: {
 					createMany: {
-						data: data.players,
+						data: players,
 					},
 				},
 			},
 			include: {
-				players: true,
+				users: true,
 			},
 		});
-
-		if (state === GameState.PickingTeams) {
-			const teamIndex = GameManager.calculateNextPick(-1, game);
-
-			await message(
-				text,
-				embed({
-					title: 'Team Picking',
-					description: `@<${data.captains[teamIndex]}>, pick a player with \`/pick <user>\`.`,
-					fields: playersToFields(data.players),
-				}),
-			);
-		}
 	}
 
 	/** Closes the game */
 	public static async close(
-		game: GameWithPlayers,
+		game: GameWithModeNameAndPlayersWithDiscordIds,
 		guild: Guild,
 		channel: GuildTextBasedChannel,
-		reason: string,
+		reason: string
 	) {
 		// Unlock the players after they have been moved
-		this.releasePlayers(iter(game.players).map(p => p.userId));
+		this.releasePlayers(iter(game.users).map(p => p.user.discordId));
 
 		message(
 			channel,
 			embed({
 				title: 'Game Finished',
-				description: `Want to play again?\n${
-					modeAndGuildToQueueData
-						.get(`${guild.id}.${game.mode}`)
-						?.map(q => `<@${q.channelId}>`)
-						.join('\n') || 'No queue channels found :('
+				description: `Want to play again?\n${modeAndGuildToQueueData
+					.get(`${guild.id}.${game.mode.name}`)
+					?.map(q => `<@${q.channelId}>`)
+					.join('\n') || 'No queue channels found :('
 				}`,
 				fields: [
 					{
@@ -408,7 +380,7 @@ export class GameManager extends Handler {
 						value: reason,
 					},
 				],
-			}),
+			})
 		);
 
 		return setTimeout(async () => {
@@ -426,80 +398,15 @@ export class GameManager extends Handler {
 		}, 5_000);
 	}
 
-	/** Calculates the index for the next captain pick */
-	public static calculateNextPick(lastIndex: number, game: GameWithPlayers) {
-		const { nextIndex } = game.players.reduce(
-			(a, b) => {
-				if (a.map[b.team]) {
-					++a.map[b.team];
-				} else {
-					a.map[b.team] = 1;
-				}
-
-				if (a.map[b.team] === games[game.mode].playersPerTeam) return a;
-
-				if (
-					a.map[b.team] < a.count ||
-					(a.map[b.team] === a.count && a.nextIndex === lastIndex)
-				) {
-					a.nextIndex = b.team;
-					a.count = a.map[b.team];
-				}
-
-				return a;
-			},
-			{
-				nextIndex: -1,
-				count: Infinity,
-				map: {} as Record<string, number>,
-			},
-		);
-
-		return nextIndex;
-	}
-
-	/** Starts the game */
-	public static async startGame(
-		game: GameWithPlayers,
-		text: GuildTextBasedChannel,
-	) {
-		await message(text, {
-			embeds: embed({
-				title: 'Game Started',
-				description: '...',
-			}).embeds,
-			content: iter(game.players)
-				.map(p => `<@${p.userId}>`)
-				.chunk(4)
-				.map(c => `\`/party ${c.join(' ')}`)
-				.toArray()
-				.join('\n'),
-		});
-
-		await prisma.game.update({
-			where: {
-				textChannelId: game.textChannelId,
-			},
-			data: {
-				state: GameState.Playing,
-			},
-		});
-	}
-
 	/** Initializes a new game */
 	public static async initializeGame(
 		queue: QueueList,
 		parties: PartyWithMemberProfiles[],
-		guild: Guild,
+		guild: Guild
 	) {
 		++this.activeGames;
 
 		await this.createGame(queue, parties, guild);
-
-		// pick teams
-		// create team vcs
-		// create map banning for team captains
-		// create scoring command, add option to use built-in OCR configured for Hypixel Bedwars
 	}
 
 	@EventHandler()

@@ -18,7 +18,7 @@ export default class PartyKickCommand extends Command {
 				type: ArgumentType.User,
 				name: 'user',
 				description: 'The user to kick from the party',
-			}),
+			})
 		);
 	}
 
@@ -27,31 +27,44 @@ export default class PartyKickCommand extends Command {
 			where: {
 				members: {
 					some: {
-						id: source.user.id,
+						discordId: source.user.id,
 					},
 				},
 			},
-			include: {
-				members: true,
+			select: {
+				id: true,
+				members: {
+					where: {
+						discordId: user.id,
+					},
+					select: {
+						discordId: true,
+					},
+				},
+				leader: {
+					select: {
+						discordId: true,
+					},
+				},
 			},
 		});
 
 		if (party === null) throw 'You are not in a party.';
-		if (party.leaderId !== source.user.id)
-			throw `Only the party leader, <@${party.leaderId}>, can kick party members.`;
+		if (party.leader.discordId !== source.user.id)
+			throw `Only the party leader, <@${party.leader.discordId}>, can kick party members.`;
 		if (source.user.id === user.id)
 			throw 'You cannot kick yourself from the party.';
-		if (!party.members.some(m => m.id === user.id))
+		if (!party.members.some(m => m.discordId === user.id))
 			throw `${user} cannot be kicked as they are not a member of the party.`;
 
-		await prisma.user.update({
+		await prisma.party.update({
 			where: {
-				id: user.id,
+				id: party.id,
 			},
 			data: {
-				party: {
-					create: {
-						leaderId: user.id,
+				members: {
+					disconnect: {
+						discordId: user.id,
 					},
 				},
 			},

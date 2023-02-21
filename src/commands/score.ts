@@ -5,15 +5,14 @@ import {
 	Command,
 	CommandOptions,
 	CommandSource,
-	EventHandler,
 	embed,
+	EventHandler,
 	message,
 } from '@matteopolak/framecord';
-import { GameState } from '@prisma/client';
 import { createTeamButtons } from '@util/components';
 import { iter } from '@util/iter';
 import { playersToFields } from '@util/message';
-import { channels, games } from 'config';
+import { channels } from 'config';
 import { prisma } from 'database';
 import { Attachment, ChannelType, Interaction } from 'discord.js';
 
@@ -27,7 +26,7 @@ export default class ScoreCommand extends Command {
 				type: ArgumentType.Attachment,
 				name: 'proof',
 				description: 'A screenshot of the game results',
-			}),
+			})
 		);
 	}
 
@@ -37,12 +36,18 @@ export default class ScoreCommand extends Command {
 				textChannelId: source.channelId,
 			},
 			include: {
-				players: true,
+				users: {
+					include: {
+						user: true,
+					},
+				},
+				state: true,
+				mode: true,
 			},
 		});
 
 		if (game === null) throw 'This command can only be run in a game channel.';
-		if (game.state !== GameState.Playing)
+		if (game.state.index !== 0)
 			throw 'You can only score the game after it has started.';
 
 		const scoring = this.client.channels.cache.get(channels.scoring.channelId);
@@ -54,7 +59,7 @@ export default class ScoreCommand extends Command {
 				id: game.id,
 			},
 			data: {
-				state: GameState.Scoring,
+				stateId: 2,
 			},
 		});
 
@@ -62,19 +67,19 @@ export default class ScoreCommand extends Command {
 			embeds: embed({
 				title: `Game \`#${game.id}\``,
 				description: `Submitted by ${source.user}`,
-				fields: playersToFields(game.players),
+				fields: playersToFields(game.users),
 				image: {
 					url: proof.url,
 				},
 			}).embeds,
-			components: createTeamButtons(games[game.mode].teams, game.id),
+			components: createTeamButtons(game.mode.teams, game.id),
 		});
 
 		return void GameManager.close(
 			game,
 			source.guild,
 			source.channel!,
-			'The game has been sent to be scored.',
+			'The game has been sent to be scored.'
 		);
 	}
 
@@ -94,21 +99,21 @@ export default class ScoreCommand extends Command {
 				id: gameId,
 			},
 			include: {
-				players: true,
+				users: true,
 			},
 		});
 
 		if (game === null) return;
 
 		await prisma.$transaction(
-			iter(game.players)
+			iter(game.users)
 				.map(p => {
 					const winner = p.team === teamIndex;
 
 					return prisma.profile.upsert({
 						where: {
-							mode_userId: {
-								mode: game.mode,
+							modeId_userId: {
+								modeId: game.modeId,
 								userId: p.userId,
 							},
 						},
@@ -125,14 +130,14 @@ export default class ScoreCommand extends Command {
 							},
 						},
 						create: {
-							mode: game.mode,
+							modeId: game.modeId,
 							userId: p.userId,
 							[winner ? 'wins' : 'losses']: 1,
 							[winner ? 'winstreak' : 'losestreak']: 1,
 						},
 					});
 				})
-				.toArray(),
+				.toArray()
 		);
 
 		await interaction.message.delete();

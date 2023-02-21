@@ -18,52 +18,57 @@ export default class PartyTransferCommand extends Command {
 				type: ArgumentType.User,
 				name: 'user',
 				description: 'The user to transfer the party to',
-			}),
+			})
 		);
 	}
 
-	public async run(source: CommandSource, user: User) {
-		const party = await prisma.party.findFirst({
+	public async run(source: CommandSource, other: User) {
+		const user = await prisma.user.findFirst({
 			where: {
-				members: {
-					some: {
-						id: source.user.id,
-					},
-				},
+				discordId: source.user.id,
 			},
-			include: {
-				members: true,
-			},
-		});
-
-		if (party === null) throw 'You are not in a party.';
-		if (party.leaderId !== source.user.id)
-			throw `Only the party leader, <@${party.leaderId}>, can transfer leadership of the party.`;
-		if (!party.members.some(m => m.id === user.id))
-			throw `Party leadership cannot be transferred to ${user} as they are not a member of the party.`;
-
-		await prisma.$transaction([
-			prisma.party.update({
-				where: {
-					leaderId: user.id,
-				},
-				data: {
-					leaderId: source.user.id,
-				},
-			}),
-			prisma.user.update({
-				where: {
-					id: source.user.id,
-				},
-				data: {
-					party: {
-						create: {
-							leaderId: source.user.id,
+			select: {
+				id: true,
+				party: {
+					select: {
+						id: true,
+						members: {
+							where: {
+								discordId: other.id,
+							},
+							select: {
+								discordId: true,
+							},
+						},
+						leaderId: true,
+						leader: {
+							select: {
+								discordId: true,
+							},
 						},
 					},
 				},
-			}),
-		]);
+			},
+		});
+
+		if (user === null || user.party === null) throw 'You are not in a party.';
+		if (user.party.leaderId !== user.id)
+			throw `Only the party leader, <@${user.party.leader.discordId}>, can transfer leadership of the party.`;
+		if (!user.party.members.some(m => m.discordId === other.id))
+			throw `Party leadership cannot be transferred to ${user} as they are not a member of the party.`;
+
+		await prisma.party.update({
+			where: {
+				id: user.party.id,
+			},
+			data: {
+				leader: {
+					connect: {
+						discordId: other.id,
+					},
+				},
+			},
+		});
 
 		return `You have transferred leadership of your party to ${user}.`;
 	}

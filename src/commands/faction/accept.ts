@@ -18,7 +18,7 @@ export default class FactionAcceptCommand extends Command {
 				type: ArgumentType.User,
 				name: 'user',
 				description: 'The user whose invite you want to accept',
-			}),
+			})
 		);
 	}
 
@@ -30,61 +30,73 @@ export default class FactionAcceptCommand extends Command {
 			where: {
 				members: {
 					some: {
-						id: user.id,
+						discordId: user.id,
+					},
+				},
+				invites: {
+					some: {
+						discordId: source.user.id,
+					},
+				},
+			},
+			select: {
+				id: true,
+				leader: {
+					select: {
+						discordId: true,
 					},
 				},
 			},
 		});
 
-		if (faction === null) throw `${user} is not in a faction.`;
-
-		const inviteIndex = faction.invites.indexOf(source.user.id);
-
-		if (inviteIndex === -1)
-			throw `<@${faction.leaderId}> has not invited you to their faction.`;
+		if (faction === null) throw `${user} has not invited you to their faction.`;
 
 		const selfFaction = await prisma.faction.findFirst({
 			where: {
 				members: {
 					some: {
-						id: source.user.id,
+						discordId: source.user.id,
 					},
 				},
 			},
-			include: {
-				members: true,
+			select: {
+				id: true,
+				leader: {
+					select: {
+						discordId: true,
+					},
+				},
 			},
 		});
 
+		// Shouldn't be possible, but just in case
+		if (faction.id === selfFaction?.id) throw `You are already in <@${faction.leader.discordId}>'s faction.`;
+
 		if (selfFaction !== null) {
-			if (selfFaction.leaderId !== source.user.id)
-				throw `You must leave your current faction before accepting the invite to ${faction.leaderId}'s faction.`;
+			if (selfFaction.leader.discordId !== source.user.id)
+				throw `You must leave your current faction before accepting the invite to <@${faction.leader.discordId}>'s faction.`;
 			else
-				throw `You must transfer leadership or disband your current faction before accepting the invite to ${faction.leaderId}'s faction.`;
+				throw `You must transfer leadership or disband your current faction before accepting the invite to <@${faction.leader.discordId}>'s faction.`;
 		}
 
-		// Remove the invite from the array
-		faction.invites.splice(inviteIndex, 1);
+		await prisma.faction.update({
+			where: {
+				id: faction.id,
+			},
+			data: {
+				invites: {
+					disconnect: {
+						discordId: source.user.id,
+					},
+				},
+				members: {
+					connect: {
+						discordId: source.user.id,
+					},
+				},
+			},
+		});
 
-		await prisma.$transaction([
-			prisma.faction.update({
-				where: {
-					leaderId: faction.leaderId,
-				},
-				data: {
-					invites: faction.invites,
-				},
-			}),
-			prisma.user.update({
-				where: {
-					id: source.user.id,
-				},
-				data: {
-					factionId: faction.leaderId,
-				},
-			}),
-		]);
-
-		return `You have accepted the invite to <@${faction.leaderId}>'s faction.`;
+		return `You have accepted the invite to <@${faction.leader.discordId}>'s faction.`;
 	}
 }

@@ -1,15 +1,19 @@
 import { GameManager } from '@managers/game';
 import { EventHandler, Handler } from '@matteopolak/framecord';
-import { Mode, Party, Profile, User } from '@prisma/client';
+import { Mode, Party, Profile, State, User } from '@prisma/client';
 import { iter } from '@util/iter';
 import { stdev } from '@util/math';
-import { GameConfig, games, queues } from 'config';
 import { prisma } from 'database';
 import { ChannelType, VoiceState } from 'discord.js';
 import { inPlaceSort } from 'fast-sort';
 
+export type ModeWithStates = Mode & {
+	states: State[];
+};
+
 export interface QueueList {
-	mode: Mode;
+	mode: ModeWithStates;
+	modeId: number;
 	guildId: string;
 	players: Set<string>;
 }
@@ -18,7 +22,6 @@ export interface QueueData {
 	channelId: string;
 }
 
-export const queueToMode: Map<string, Mode> = new Map();
 export const modeAndGuildToQueueList: Map<string, QueueList> = new Map();
 export const modeAndGuildToQueueData: Map<string, QueueData[]> = new Map();
 export const reservedIds: Set<string> = new Set();
@@ -51,13 +54,13 @@ export default class QueueHandler extends Handler {
 	/** Validates a group of players */
 	private async isSliceValid(
 		parties: PartyWithMemberProfiles[],
-		config: GameConfig,
+		config: Mode
 	) {
 		const teams = Array.from({ length: config.teams }, () => 0);
 
 		for (const party of parties) {
 			const index = teams.findIndex(
-				n => party.members.length + n <= config.playersPerTeam,
+				n => party.members.length + n <= config.playersPerTeam
 			);
 
 			if (index === -1) return false;
@@ -73,8 +76,8 @@ export default class QueueHandler extends Handler {
 		const guild = this.client.guilds.cache.get(queue.guildId);
 		if (guild === undefined) return;
 
-		const teamSize = games[queue.mode].playersPerTeam;
-		const size = teamSize * games[queue.mode].teams;
+		const teamSize = queue.mode.playersPerTeam;
+		const size = teamSize * queue.mode.teams;
 
 		const parties = await prisma.party.findMany({
 			where: {
@@ -101,7 +104,7 @@ export default class QueueHandler extends Handler {
 								],
 							},
 						],
-						id: {
+						discordId: {
 							in: iter(queue.players)
 								.filter(p => !reservedIds.has(p))
 								.toArray(),
@@ -114,8 +117,8 @@ export default class QueueHandler extends Handler {
 					include: {
 						profiles: {
 							where: {
-								mode: {
-									equals: queue.mode,
+								modeId: {
+									equals: queue.modeId,
 								},
 							},
 						},
@@ -143,8 +146,8 @@ export default class QueueHandler extends Handler {
 					// Then, put them into a new party
 					parties.push({
 						leaderId: party.leaderId,
-						invites: [],
 						members: split,
+						id: party.id,
 					});
 				}
 			}
@@ -158,24 +161,24 @@ export default class QueueHandler extends Handler {
 		inPlaceSort(parties).desc(
 			p =>
 				p.members.reduce((a, b) => a + (b.profiles[0]?.rating ?? 0), 0) /
-				p.members.length,
+				p.members.length
 		);
 
 		for (let i = 0; i <= partyCount; ++i) {
 			let players = 0;
 
 			const sliceIndex = parties.findIndex(
-				(a, b) => b >= i && (players += a.members.length) === size,
+				(a, b) => b >= i && (players += a.members.length) === size
 			);
 			if (sliceIndex === -1) continue;
 
 			const slice = parties.slice(i, sliceIndex + 1);
 			const deviation = stdev(
-				slice.flatMap(s => s.members.map(m => m.profiles[0]?.rating ?? 0)),
+				slice.flatMap(s => s.members.map(m => m.profiles[0]?.rating ?? 0))
 			);
 
-			if (deviation > queues[queue.mode].maximumStdev) continue;
-			if (!this.isSliceValid(slice, games[queue.mode])) continue;
+			if (deviation > queue.mode.maximumStdDev) continue;
+			if (!this.isSliceValid(slice, queue.mode)) continue;
 
 			if (deviation < lowestStdev) {
 				lowest = slice;
@@ -192,13 +195,34 @@ export default class QueueHandler extends Handler {
 	private async addPlayer(state: VoiceStateResolvable) {
 		if (state.channelId === null) return;
 
-		const mode = queueToMode.get(state.channelId);
+		const mode = await prisma.mode.findFirst({
+			where: {
+				queues: {
+					some: {
+						channelId: state.channelId,
+					},
+				},
+			},
+			include: {
+				states: true,
+			},
+		});
+
 		if (!mode) return;
 
-		const user = await prisma.user.findFirst({
+		const user = await prisma.user.upsert({
 			where: {
-				id: state.id,
+				discordId: state.id,
 			},
+			create: {
+				discordId: state.id,
+				profiles: {
+					create: {
+						modeId: mode.id,
+					},
+				},
+			},
+			update: {},
 		});
 
 		if (!user) return;
@@ -210,19 +234,36 @@ export default class QueueHandler extends Handler {
 			modeAndGuildToQueueList
 				.set(key, {
 					mode,
+					modeId: mode.id,
 					players: new Set(),
 					guildId: state.guild.id,
 				})
 				.get(key)!;
 
-		queue.players.add(user.id);
+		queue.players.add(user.discordId);
 
 		this.searchForGame(queue);
 	}
 
 	/** Removes a player from the queue */
 	private async removePlayer(state: VoiceState) {
-		const mode = queueToMode.get(state.channelId!);
+		if (!state.channelId) return;
+
+		const mode = await prisma.mode.findFirst({
+			where: {
+				queues: {
+					some: {
+						channelId: state.channelId,
+					},
+				},
+			},
+			include: {
+				states: true,
+			},
+		});
+
+		if (!mode) return;
+
 		const queue = modeAndGuildToQueueList.get(`${state.guild.id}.${mode}`);
 
 		queue?.players.delete(state.id);
@@ -236,7 +277,7 @@ export default class QueueHandler extends Handler {
 		// Update the mode for each active user
 		for (const queue of queues) {
 			const guild = this.client.guilds.cache.get(queue.guildId);
-			const channel = guild?.channels.cache.get(queue.id);
+			const channel = guild?.channels.cache.get(queue.channelId);
 
 			// Delete the queue if it no longer exists or isn't a voice channel
 			if (channel?.type !== ChannelType.GuildVoice) {
@@ -249,18 +290,17 @@ export default class QueueHandler extends Handler {
 				continue;
 			}
 
-			const key = `${queue.guildId}.${queue.mode}`;
+			const key = `${queue.guildId}.${queue.modeId}`;
 			const data =
 				modeAndGuildToQueueData.get(key) ??
 				modeAndGuildToQueueData.set(key, []).get(key)!;
 
-			data.push({ channelId: queue.id });
-			queueToMode.set(queue.id, queue.mode);
+			data.push({ channelId: queue.channelId });
 
 			for (const [, member] of channel.members) {
 				this.addPlayer({
 					id: member.id,
-					channelId: queue.id,
+					channelId: queue.channelId,
 					guild: { id: queue.guildId },
 				});
 			}

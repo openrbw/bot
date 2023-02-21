@@ -1,29 +1,24 @@
 {
-	"name": "@matteopolak/ranked-bedwars",
+	"name": "@matteopolak/discord-elo-matchmaker",
 	"version": "1.0.0",
-	"description": "A production-ready queue and rating system for Ranked Bedwars 🛏️",
-	"main": "dist/index.js",
+	"description": "Matchmaking bot for Discord for the Elo rating system",
+	"main": "build/index.js",
 	"scripts": {
-		"build:windows": "powershell \"Remove-Item -Recurse -ErrorAction SilentlyContinue -Path \\\"dist\\\"\" && tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
-		"build:linux": "rm -rf dist && tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
 		"build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
 		"check": "tsc --project tsconfig.json --noEmit",
-		"start": "yarn run build && node dist/index.js",
-		"start:windows": "yarn run build:windows && node dist/index.js",
-		"start:linux": "yarn run build:linux && node dist/index.js"
+		"start": "yarn run build && node build/index.js"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/matteopolak/ranked-bedwars.git"
+		"url": "git+https://github.com/matteopolak/discord-elo-matchmaker.git"
 	},
 	"author": "Matthew Polak <contact@matteopolak.com>",
 	"license": "GPL-3.0",
 	"bugs": {
-		"url": "https://github.com/matteopolak/ranked-bedwars/issues"
+		"url": "https://github.com/matteopolak/discord-elo-matchmaker/issues"
 	},
-	"homepage": "https://github.com/matteopolak/ranked-bedwars#readme",
+	"homepage": "https://github.com/matteopolak/discord-elo-matchmaker#readme",
 	"devDependencies": {
-		"@trivago/prettier-plugin-sort-imports": "^3.3.1",
 		"@typescript-eslint/eslint-plugin": "^5.40.0",
 		"@typescript-eslint/parser": "^5.40.0",
 		"eslint": "^8.25.0",
@@ -40,6 +35,7 @@
 		"axios": "^1.1.3",
 		"discord.js": "^14.6.0",
 		"dotenv": "^16.0.3",
+		"eslint-plugin-simple-import-sort": "^10.0.0",
 		"fast-sort": "^3.2.0"
 	}
 }

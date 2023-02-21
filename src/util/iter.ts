@@ -55,7 +55,7 @@ class IterUtil<T> implements Iterable<T> {
 	/** Flattens the returned array and maps it out */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	public flatMap<R extends Iterable<any>, V extends ExtractIterableValue<R>>(
-		mapper: TypedFunction<T, R>,
+		mapper: TypedFunction<T, R>
 	) {
 		const iterable = this.iterable;
 		const flatMap = function* () {
@@ -90,7 +90,7 @@ class IterUtil<T> implements Iterable<T> {
 	/** Reduces the iterable into a single value */
 	public reduce<R>(
 		reducer: TypedMultiArgFunction<[callback: R, item: T], R>,
-		start: R,
+		start: R
 	) {
 		let current = start;
 
@@ -156,7 +156,7 @@ class IterUtil<T> implements Iterable<T> {
 
 function* groupBy<T, I extends Iterable<T>, V extends number | string>(
 	fn: TypedFunction<T, V>,
-	iterable: I,
+	iterable: I
 ) {
 	const grouped = new Map<V, T[]>();
 
@@ -175,7 +175,7 @@ function* groupBy<T, I extends Iterable<T>, V extends number | string>(
 
 function* filter<T, I extends Iterable<T>>(
 	fn: TypedFunction<T, boolean>,
-	iterable: I,
+	iterable: I
 ) {
 	for (const item of iterable) {
 		if (fn(item)) yield item;
@@ -184,7 +184,7 @@ function* filter<T, I extends Iterable<T>>(
 
 function* map<T, R, I extends Iterable<T>>(
 	fn: TypedMultiArgFunction<[item: T, index: number], R>,
-	iterable: I,
+	iterable: I
 ) {
 	let index = 0;
 

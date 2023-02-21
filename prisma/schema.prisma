@@ -7,70 +7,51 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Mode {
-  Ranked
-  Unranked
-  Open
-}
-
-enum GameState {
-  PickingTeams
-  BanningMaps
-  Playing
-  Scoring
-  Finished
-  Voided
-}
-
 model Category {
   id      String @id
   guildId String
 }
 
 model Party {
-  leaderId String   @id
-  members  User[]
-  invites  String[]
+  id       Int    @id @default(autoincrement())
+  leader   User   @relation("partyLeader", fields: [leaderId], references: [id])
+  leaderId Int    @unique
+  invites  User[] @relation("partyInvites")
+  members  User[] @relation("partyMembers")
 }
 
 model Queue {
-  id      String @id
-  guildId String
-  mode    Mode
+  id        Int    @id @default(autoincrement())
+  channelId String @unique
+  guildId   String
+  mode      Mode   @relation(fields: [modeId], references: [id])
+  modeId    Int
+
+  @@unique([guildId, channelId])
 }
 
-model Map {
-  url        String
-  name       String
-  name_lower String  @id
-  enabled    Boolean @default(true)
-  height     Int     @db.SmallInt
-}
-
-model PickedPlayer {
-  userId String
-  team   Int    @db.SmallInt
-  game   Game   @relation(fields: [gameId], references: [id])
+model GameUser {
+  id     Int  @id @default(autoincrement())
+  team   Int  @db.SmallInt
+  index  Int  @db.SmallInt
+  user   User @relation(fields: [userId], references: [id])
+  userId Int
+  game   Game @relation(fields: [gameId], references: [id])
   gameId Int
-  user   User   @relation(fields: [userId], references: [id])
-
-  @@id([userId, gameId])
-  @@index([userId])
 }
 
 model Game {
-  id              Int            @id @default(autoincrement())
-  state           GameState
-  mode            Mode
-  players         PickedPlayer[]
-  lastPickIndex   Int            @default(-1) @db.SmallInt
-  captains        String[]
+  id              Int        @id @default(autoincrement())
+  state           State      @relation(fields: [stateId], references: [id])
+  stateId         Int
+  mode            Mode       @relation(fields: [modeId], references: [id])
+  modeId          Int
+  users           GameUser[]
+  lastPickIndex   Int        @default(-1) @db.SmallInt
   remainingIds    String[]
-  textChannelId   String         @unique
+  textChannelId   String     @unique
   voiceChannelIds String[]
-  bannedMaps      String[]
-  captainMapBans  String[]
-  createdAt       DateTime       @default(now())
+  createdAt       DateTime   @default(now())
   startedAt       DateTime?
   endedAt         DateTime?
 
@@ -79,41 +60,72 @@ model Game {
 }
 
 model Faction {
-  leaderId   String   @id
+  id         Int      @id @default(autoincrement())
+  leaderId   Int      @unique
+  leader     User     @relation("factionLeader", fields: [leaderId], references: [id])
   name       String?
-  name_lower String?  @unique
-  members    User[]
-  invites    String[]
+  nameLower  String?  @unique
+  members    User[]   @relation("factionMembers")
+  invites    User[]   @relation("factionInvites")
   experience Int      @default(0)
   createdAt  DateTime @default(now())
 }
 
 model User {
-  id          String         @id
+  id          Int        @id @default(autoincrement())
+  discordId   String     @unique
   bannedUntil BigInt?
   profiles    Profile[]
-  uuid        String         @unique @db.Uuid
-  username    String
-  faction     Faction?       @relation(fields: [factionId], references: [leaderId])
-  factionId   String?
-  createdAt   DateTime       @default(now())
-  party       Party          @relation(fields: [partyId], references: [leaderId])
-  partyId     String
-  picks       PickedPlayer[]
+  createdAt   DateTime   @default(now())
+  gameUsers   GameUser[]
+
+  party        Party?  @relation("partyMembers", fields: [partyId], references: [id])
+  partyLeader  Party?  @relation("partyLeader")
+  partyInvites Party[] @relation("partyInvites")
+  partyId      Int?
+
+  faction        Faction?  @relation("factionMembers", fields: [factionId], references: [id])
+  factionLeader  Faction?  @relation("factionLeader")
+  factionInvites Faction[] @relation("factionInvites")
+  factionId      Int?
 }
 
 model Profile {
-  user       User   @relation(fields: [userId], references: [id])
-  userId     String
-  mode       Mode
-  wins       Int    @default(0)
-  winstreak  Int    @default(0)
-  losses     Int    @default(0)
-  losestreak Int    @default(0)
-  mvps       Int    @default(0)
-  rating     Int    @default(0)
+  user       User @relation(fields: [userId], references: [id])
+  userId     Int
+  mode       Mode @relation(fields: [modeId], references: [id])
+  modeId     Int
+  wins       Int  @default(0)
+  winstreak  Int  @default(0)
+  losses     Int  @default(0)
+  losestreak Int  @default(0)
+  rating     Int  @default(0)
 
-  @@id([mode, userId])
+  @@id([modeId, userId])
+}
+
+model Mode {
+  id             Int       @id @default(autoincrement())
+  name           String
+  nameLower      String    @unique
+  teams          Int       @default(2) @db.SmallInt
+  playersPerTeam Int       @default(4) @db.SmallInt
+  maximumStdDev  Int       @default(100) @db.SmallInt
+  enabled        Boolean   @default(true)
+  profiles       Profile[]
+  queues         Queue[]
+  games          Game[]
+  states         State[]
+}
+
+model State {
+  id      Int     @id @default(autoincrement())
+  name    String
+  enabled Boolean @default(true)
+  index   Int     @default(0) @db.SmallInt
+  games   Game[]
+  mode    Mode    @relation(fields: [modeId], references: [id])
+  modeId  Int
 }
 
 model Event {

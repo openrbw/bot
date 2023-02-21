@@ -1,4 +1,3 @@
-import { queueToMode } from '@handlers/queue';
 import {
 	Argument,
 	ArgumentType,
@@ -6,9 +5,8 @@ import {
 	CommandOptions,
 	CommandSource,
 } from '@matteopolak/framecord';
-import { Mode } from '@prisma/client';
 import { prisma } from 'database';
-import { ChannelType, PermissionFlagsBits } from 'discord.js';
+import { ChannelType, PermissionFlagsBits, VoiceChannel } from 'discord.js';
 
 export default class DeleteQueueCommand extends Command {
 	constructor(options: CommandOptions) {
@@ -24,30 +22,31 @@ export default class DeleteQueueCommand extends Command {
 				type: ArgumentType.Channel,
 				filter: c => c.type === ChannelType.GuildVoice,
 				error: 'You did not provide a voice channel.',
-			}),
+			})
 		);
 	}
 
-	public async run(source: CommandSource, name: string, mode: Mode) {
-		const channel = await source.guild.channels.create({
-			name,
-			type: ChannelType.GuildVoice,
-		});
-
-		await prisma.queue.create({
-			data: {
-				id: channel.id,
-				guildId: channel.guildId,
-				mode,
+	public async run(source: CommandSource, channel: VoiceChannel) {
+		const queue = await prisma.queue.delete({
+			where: {
+				guildId_channelId: {
+					guildId: source.guildId,
+					channelId: channel.id,
+				},
+			},
+			select: {
+				mode: {
+					select: {
+						name: true,
+					},
+				},
 			},
 		});
 
-		queueToMode.set(channel.id, mode);
-
-		return `Successfully created the \`${mode}\` queue ${channel}.`;
+		return `Successfully deleted the \`${queue.mode.name}\` queue ${channel}.`;
 	}
 
 	public async catch() {
-		throw 'An error ocurred while trying to create the queue channel. Please try again later.';
+		throw 'An error ocurred while trying to delete the queue channel. Please try again later.';
 	}
 }

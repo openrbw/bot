@@ -19,35 +19,44 @@ export default class PartyListCommand extends Command {
 			where: {
 				members: {
 					some: {
-						id: source.user.id,
+						discordId: source.user.id,
 					},
 				},
 			},
-			include: {
-				members: true,
+			select: {
+				leader: {
+					select: {
+						discordId: true,
+					},
+				},
+				members: {
+					select: {
+						discordId: true,
+					},
+				},
 			},
 		});
 
 		if (party === null) throw 'You are not in a party.';
 
 		const leader =
-			party.leaderId === source.user.id
+			party.leader.discordId === source.user.id
 				? source.user
 				: await this.client.users
-						.fetch(party.leaderId, { cache: false })
-						.catch(() => null);
+					.fetch(party.leader.discordId, { cache: false })
+					.catch(() => null);
 
 		const data: APIEmbed = {
 			fields: [
 				{
 					name: `Members (${party.members.length})`,
-					value: party.members.map(m => `<@${m.id}>`).join('\n'),
+					value: party.members.map(m => `<@${m.discordId}>`).join('\n'),
 				},
 			],
 		};
 
 		if (leader === null) {
-			data.description = `<@${party.leaderId}>'s Party`;
+			data.description = `<@${party.leader.discordId}>'s Party`;
 		} else {
 			data.author = {
 				name: `${leader.tag}'s Party`,

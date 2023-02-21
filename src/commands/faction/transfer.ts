@@ -19,7 +19,7 @@ export default class FactionTransferCommand extends Command {
 				type: ArgumentType.User,
 				name: 'user',
 				description: 'The user to transfer the faction to',
-			}),
+			})
 		);
 	}
 
@@ -28,33 +28,43 @@ export default class FactionTransferCommand extends Command {
 			where: {
 				members: {
 					some: {
-						id: source.user.id,
+						discordId: source.user.id,
 					},
 				},
 			},
-			include: {
-				members: true,
+			select: {
+				id: true,
+				leader: {
+					select: {
+						discordId: true,
+					},
+				},
+				members: {
+					where: {
+						discordId: user.id,
+					},
+					select: {
+						discordId: true,
+					},
+				},
 			},
 		});
 
 		if (faction === null) throw 'You are not in a faction.';
-		if (faction.leaderId !== source.user.id)
-			throw `Only the faction leader, <@${faction.leaderId}>, can transfer leadership of the faction.`;
-		if (!faction.members.some(m => m.id === user.id))
+		if (faction.leader.discordId !== source.user.id)
+			throw `Only the faction leader, <@${faction.leader.discordId}>, can transfer leadership of the faction.`;
+		if (!faction.members.some(m => m.discordId === user.id))
 			throw `Faction leadership cannot be transferred to ${user} as they are not a member of the faction.`;
 
 		await prisma.faction.update({
 			where: {
-				leaderId: source.user.id,
+				id: faction.id,
 			},
 			data: {
-				leaderId: user.id,
-				members: {
-					disconnect: [
-						{
-							id: source.user.id,
-						},
-					],
+				leader: {
+					connect: {
+						discordId: user.id,
+					},
 				},
 			},
 		});

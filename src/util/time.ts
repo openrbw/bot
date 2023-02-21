@@ -22,6 +22,6 @@ export function parseTimeString(time: string) {
 
 	return iter(matches).reduce(
 		(s, m) => s + parseInt(m[0]) * CHAR_TO_TIME_TABLE[m[1]],
-		0,
+		0
 	);
 }

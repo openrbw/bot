@@ -20,7 +20,7 @@ export default class FactionNameCommand extends Command {
 				description: 'The new name of your faction',
 				maxLength: 16,
 				minLength: 3,
-			}),
+			})
 		);
 	}
 
@@ -29,28 +29,36 @@ export default class FactionNameCommand extends Command {
 			where: {
 				members: {
 					some: {
-						id: source.user.id,
+						discordId: source.user.id,
+					},
+				},
+			},
+			select: {
+				id: true,
+				leader: {
+					select: {
+						discordId: true,
 					},
 				},
 			},
 		});
 
 		if (faction === null) throw 'You are not in a faction.';
-		if (faction.leaderId !== source.user.id)
-			throw `Only the faction leader, <@${faction.leaderId}>, can transfer leadership of the faction.`;
+		if (faction.leader.discordId !== source.user.id)
+			throw `Only the faction leader, <@${faction.leader.discordId}>, can transfer leadership of the faction.`;
 
 		await prisma.faction.update({
 			where: {
-				leaderId: faction.leaderId,
+				id: faction.id,
 			},
 			data: {
 				name: name,
-				name_lower: name.toLowerCase(),
+				nameLower: name.toLowerCase(),
 			},
 		});
 
 		return `You have changed the name of your faction to \`${escapeCodeBlock(
-			name,
+			name
 		)}\`.`;
 	}
 

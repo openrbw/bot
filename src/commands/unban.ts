@@ -20,14 +20,14 @@ export default class UnbanCommand extends Command {
 				type: ArgumentType.User,
 				name: 'user',
 				description: 'The user to unban',
-			}),
+			})
 		);
 	}
 
 	public async run(source: CommandSource, user: User) {
 		await prisma.user.update({
 			where: {
-				id: user.id,
+				discordId: user.id,
 			},
 			data: {
 				bannedUntil: {

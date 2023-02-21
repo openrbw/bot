@@ -13,43 +13,34 @@ export default class PartyDisbandCommand extends Command {
 			where: {
 				members: {
 					some: {
-						id: source.user.id,
+						discordId: source.user.id,
 					},
 				},
 			},
-			include: {
-				members: true,
+			select: {
+				id: true,
+				members: {
+					select: {
+						id: true,
+					},
+				},
+				leader: {
+					select: {
+						discordId: true,
+					},
+				},
 			},
 		});
 
 		if (party === null) throw 'You are not in a party.';
-		if (party.leaderId !== source.user.id)
-			throw `Only the party leader, <@${party.leaderId}>, can disband the party.`;
+		if (party.leader.discordId !== source.user.id)
+			throw `Only the party leader, <@${party.leader.discordId}>, can disband the party.`;
 
-		await prisma.$transaction([
-			...party.members.map(member =>
-				prisma.user.update({
-					where: {
-						id: member.id,
-					},
-					data: {
-						party: {
-							create: {
-								leaderId: member.id,
-							},
-						},
-					},
-				}),
-			),
-			prisma.party.update({
-				where: {
-					leaderId: source.user.id,
-				},
-				data: {
-					invites: [],
-				},
-			}),
-		]);
+		await prisma.party.delete({
+			where: {
+				id: party.id,
+			},
+		});
 
 		return `You have disbanded your party of **${party.members.length} player${
 			party.members.length === 1 ? '' : 's'

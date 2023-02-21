@@ -18,68 +18,104 @@ export default class FactionInviteCommand extends Command {
 				type: ArgumentType.User,
 				name: 'user',
 				description: 'The user to invite to the faction',
-			}),
+			})
 		);
 	}
 
 	public async run(source: CommandSource, user: User) {
 		if (source.user.id === user.id) throw 'You cannot invite yourself.';
 
-		const player = await prisma.user.findFirst({
-			where: {
-				id: user.id,
-			},
-		});
-
-		if (player === null)
-			throw `${user} must be registered in order to invite them to the faction.`;
-
 		const faction = await prisma.faction.findFirst({
 			where: {
-				leaderId: source.user.id,
+				members: {
+					some: {
+						discordId: source.user.id,
+					},
+				},
 			},
-			include: {
-				members: true,
+			select: {
+				id: true,
+				members: {
+					where: {
+						discordId: user.id,
+					},
+					select: {
+						discordId: true,
+					},
+				},
+				invites: {
+					where: {
+						discordId: user.id,
+					},
+					select: {
+						discordId: true,
+					},
+				},
+				leader: {
+					select: {
+						discordId: true,
+					},
+				},
 			},
 		});
 
 		if (faction === null) {
-			await prisma.faction.upsert({
-				where: {
-					leaderId: source.user.id,
-				},
-				update: {
-					invites: {
-						push: user.id,
-					},
-				},
-				create: {
-					leaderId: source.user.id,
-					members: {
-						connect: [
-							{
-								id: source.user.id,
+			await prisma.faction.create({
+				data: {
+					leader: {
+						connectOrCreate: {
+							where: {
+								discordId: source.user.id,
 							},
-						],
+							create: {
+								discordId: source.user.id,
+							},
+						},
 					},
-					invites: [user.id],
+					members: {
+						connectOrCreate: {
+							where: {
+								discordId: source.user.id,
+							},
+							create: {
+								discordId: source.user.id,
+							},
+						},
+					},
+					invites: {
+						connectOrCreate: {
+							where: {
+								discordId: user.id,
+							},
+							create: {
+								discordId: user.id,
+							},
+						},
+					},
 				},
 			});
 		} else {
-			if (faction.leaderId !== source.user.id)
+			if (faction.leader.discordId !== source.user.id)
 				throw 'You must be the faction leader in order to manage the faction.';
-			if (faction.members.some(m => m.id === user.id))
+			if (faction.members.some(m => m.discordId === user.id))
 				throw `${user} is already in the faction.`;
-			if (faction.invites.includes(user.id))
+			if (faction.invites.some(i => i.discordId === user.id))
 				throw `${user} has already been invited. They can use \`/faction accept ${source.user.tag}\` to accept the invite.`;
 
 			await prisma.faction.update({
 				where: {
-					leaderId: source.user.id,
+					id: faction.id,
 				},
 				data: {
 					invites: {
-						push: user.id,
+						connectOrCreate: {
+							where: {
+								discordId: user.id,
+							},
+							create: {
+								discordId: user.id,
+							},
+						},
 					},
 				},
 			});

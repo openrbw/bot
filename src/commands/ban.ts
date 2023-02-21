@@ -80,10 +80,10 @@ export default class BanCommand extends Command {
 				type: ArgumentType.Boolean,
 				name: 'overwrite',
 				description:
-					"If true (default), the user's ban will be replaced with this one.",
+					'If true (default), the user\'s ban will be replaced with this one.',
 				default: true,
 				required: false,
-			}),
+			})
 		);
 	}
 
@@ -91,11 +91,11 @@ export default class BanCommand extends Command {
 		source: CommandSource,
 		user: User,
 		duration: number,
-		overwrite: boolean,
+		overwrite: boolean
 	) {
 		const updated = await prisma.user.update({
 			where: {
-				id: user.id,
+				discordId: user.id,
 			},
 			data: {
 				bannedUntil: {
