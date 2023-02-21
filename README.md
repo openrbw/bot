@@ -1,6 +1,6 @@
 # Elo Matchmaker
 
-![Build Status](https://github.com/matteopolak/discord-elo-matchmaker/actions/workflows/lint.yml/badge.svg)
+![Build Status](https://github.com/matteopolak/discord-elo-matchmaker/actions/workflows/ci.yml/badge.svg)
 
 ## Features
 

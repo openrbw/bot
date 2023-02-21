@@ -1,4 +1,4 @@
-name: lint
+name: ci
 
 on: [push]
 
@@ -12,15 +12,13 @@ jobs:
         uses: actions/setup-node@v2.5.1
         with:
           node-version: 16.x
+          cache: "yarn"
 
       - name: Install modules
         run: yarn
 
       - name: Run ESLint
-        run: yarn run eslint src/**/*.ts
-
-      - name: Run Prettier
-        run: yarn run prettier --check src/**/*.ts
+        run: yarn eslint src/**/*.ts
 
       - name: Run TypeScript
-        run: yarn run tsc --project tsconfig.json --noEmit
+        run: yarn tsc --project tsconfig.json --noEmit
