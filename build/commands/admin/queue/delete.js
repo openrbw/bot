@@ -19,7 +19,10 @@ class DeleteQueueCommand extends framecord_1.Command {
     async run(source, channel) {
         const queue = await database_1.prisma.queue.delete({
             where: {
-                channelId: channel.id,
+                guildId_channelId: {
+                    guildId: source.guildId,
+                    channelId: channel.id,
+                },
             },
             select: {
                 mode: {

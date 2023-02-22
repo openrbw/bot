@@ -25,21 +25,34 @@ export default class PartyInviteCommand extends Command {
 	public async run(source: CommandSource, other: User) {
 		if (source.user.id === other.id) throw 'You cannot invite yourself.';
 
-		// Create the user if they don't exist
-		await prisma.user.upsert({
+		const user = await prisma.user.upsert({
 			where: {
 				discordId: source.user.id,
 			},
 			update: {},
 			create: {
 				discordId: source.user.id,
+				partyLeader: {
+					create: {},
+				},
+			},
+			select: {
+				partyLeader: {
+					select: {
+						id: true,
+					},
+				},
+			},
+		});
+
+		await prisma.user.update({
+			where: {
+				discordId: source.user.id,
+			},
+			data: {
 				party: {
-					create: {
-						leader: {
-							connect: {
-								discordId: source.user.id,
-							},
-						},
+					connect: {
+						id: user.partyLeader!.id,
 					},
 				},
 			},

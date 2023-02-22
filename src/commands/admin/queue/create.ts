@@ -6,7 +6,7 @@ import {
 	CommandSource,
 } from '@matteopolak/framecord';
 import { prisma } from 'database';
-import { ChannelType, PermissionFlagsBits } from 'discord.js';
+import { ChannelType, Events, Interaction, PermissionFlagsBits } from 'discord.js';
 
 export default class CreateQueueCommand extends Command {
 	constructor(options: CommandOptions) {
@@ -26,8 +26,49 @@ export default class CreateQueueCommand extends Command {
 				name: 'mode',
 				description: 'The mode of the queue',
 				type: ArgumentType.String,
+				autocomplete: true,
 			})
 		);
+	}
+
+	public async [Events.InteractionCreate](interaction: Interaction) {
+		if (!interaction.isAutocomplete()) return;
+
+		const modes = await prisma.mode.findMany({
+			where: {
+				nameLower: {
+					contains: interaction.options.getString('mode', true).toLowerCase(),
+				},
+			},
+			select: {
+				id: true,
+				name: true,
+			},
+			take: 25,
+		});
+
+		if (modes.length) {
+			return interaction.respond(modes.map(m => ({
+				name: m.name,
+				value: m.id,
+			})));
+		}
+
+		const defaultModes = await prisma.mode.findMany({
+			orderBy: {
+				name: 'asc',
+			},
+			select: {
+				id: true,
+				name: true,
+			},
+			take: 25,
+		});
+
+		return interaction.respond(defaultModes.map(m => ({
+			name: m.name,
+			value: m.id,
+		})));
 	}
 
 	public async run(source: CommandSource, name: string, modeName: string) {

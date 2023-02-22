@@ -17,7 +17,44 @@ class CreateQueueCommand extends framecord_1.Command {
             name: 'mode',
             description: 'The mode of the queue',
             type: framecord_1.ArgumentType.String,
+            autocomplete: true,
         }));
+    }
+    async [discord_js_1.Events.InteractionCreate](interaction) {
+        if (!interaction.isAutocomplete())
+            return;
+        const modes = await database_1.prisma.mode.findMany({
+            where: {
+                nameLower: {
+                    contains: interaction.options.getString('mode', true).toLowerCase(),
+                },
+            },
+            select: {
+                id: true,
+                name: true,
+            },
+            take: 25,
+        });
+        if (modes.length) {
+            return interaction.respond(modes.map(m => ({
+                name: m.name,
+                value: m.id,
+            })));
+        }
+        const defaultModes = await database_1.prisma.mode.findMany({
+            orderBy: {
+                name: 'asc',
+            },
+            select: {
+                id: true,
+                name: true,
+            },
+            take: 25,
+        });
+        return interaction.respond(defaultModes.map(m => ({
+            name: m.name,
+            value: m.id,
+        })));
     }
     async run(source, name, modeName) {
         const channel = await source.guild.channels.create({

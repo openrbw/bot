@@ -15,20 +15,33 @@ class PartyInviteCommand extends framecord_1.Command {
     async run(source, other) {
         if (source.user.id === other.id)
             throw 'You cannot invite yourself.';
-        await database_1.prisma.user.upsert({
+        const user = await database_1.prisma.user.upsert({
             where: {
                 discordId: source.user.id,
             },
             update: {},
             create: {
                 discordId: source.user.id,
+                partyLeader: {
+                    create: {},
+                },
+            },
+            select: {
+                partyLeader: {
+                    select: {
+                        id: true,
+                    },
+                },
+            },
+        });
+        await database_1.prisma.user.update({
+            where: {
+                discordId: source.user.id,
+            },
+            data: {
                 party: {
-                    create: {
-                        leader: {
-                            connect: {
-                                discordId: source.user.id,
-                            },
-                        },
+                    connect: {
+                        id: user.partyLeader.id,
                     },
                 },
             },
