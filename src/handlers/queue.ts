@@ -1,11 +1,12 @@
-import { GameManager } from '@managers/game';
 import { EventHandler, Handler } from '@matteopolak/framecord';
 import { Mode, Party, Profile, State, User } from '@prisma/client';
-import { iter } from '@util/iter';
-import { stdev } from '@util/math';
 import { prisma } from 'database';
 import { ChannelType, VoiceState } from 'discord.js';
 import { inPlaceSort } from 'fast-sort';
+
+import { GameManager } from '$/managers/game';
+import { iter } from '$/util/iter';
+import { stdev } from '$/util/math';
 
 export type ModeWithStates = Mode & {
 	states: State[];

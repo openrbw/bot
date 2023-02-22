@@ -1,4 +1,3 @@
-import { GameManager } from '@managers/game';
 import {
 	Argument,
 	ArgumentType,
@@ -9,12 +8,14 @@ import {
 	EventHandler,
 	message,
 } from '@matteopolak/framecord';
-import { createTeamButtons } from '@util/components';
-import { iter } from '@util/iter';
-import { playersToFields } from '@util/message';
 import { channels } from 'config';
 import { prisma } from 'database';
 import { Attachment, ChannelType, Interaction } from 'discord.js';
+
+import { GameManager } from '$/managers/game';
+import { createTeamButtons } from '$/util/components';
+import { iter } from '$/util/iter';
+import { playersToFields } from '$/util/message';
 
 export default class ScoreCommand extends Command {
 	constructor(options: CommandOptions) {

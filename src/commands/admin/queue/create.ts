@@ -33,6 +33,7 @@ export default class CreateQueueCommand extends Command {
 
 	public async [Events.InteractionCreate](interaction: Interaction) {
 		if (!interaction.isAutocomplete()) return;
+		if (!this.is(interaction)) return;
 
 		const modes = await prisma.mode.findMany({
 			where: {

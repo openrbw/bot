@@ -1,10 +1,11 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
-import { GameManager } from '@managers/game';
 import { Command, CommandOptions } from '@matteopolak/framecord';
 import { backend } from 'config';
 import { PermissionFlagsBits } from 'discord.js';
+
+import { GameManager } from '$/managers/game';
 
 const execFilePromise = promisify(execFile);
 

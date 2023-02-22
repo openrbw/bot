@@ -45,18 +45,20 @@ export default class PartyInviteCommand extends Command {
 			},
 		});
 
-		await prisma.user.update({
-			where: {
-				discordId: source.user.id,
-			},
-			data: {
-				party: {
-					connect: {
-						id: user.partyLeader!.id,
+		if (user.partyLeader !== null) {
+			await prisma.user.update({
+				where: {
+					discordId: source.user.id,
+				},
+				data: {
+					party: {
+						connect: {
+							id: user.partyLeader.id,
+						},
 					},
 				},
-			},
-		});
+			});
+		}
 
 		const party = await prisma.party.findFirstOrThrow({
 			where: {

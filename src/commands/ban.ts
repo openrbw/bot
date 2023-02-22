@@ -5,9 +5,10 @@ import {
 	CommandOptions,
 	CommandSource,
 } from '@matteopolak/framecord';
-import { parseTimeString } from '@util/time';
 import { prisma } from 'database';
 import { PermissionsBitField, User } from 'discord.js';
+
+import { parseTimeString } from '$/util/time';
 
 export default class BanCommand extends Command {
 	constructor(options: CommandOptions) {

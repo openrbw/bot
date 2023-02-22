@@ -1,13 +1,5 @@
-import {
-	modeAndGuildToQueueData,
-	PartyWithMemberProfiles,
-	QueueList,
-	reservedIds,
-} from '@handlers/queue';
 import { embed, EventHandler, Handler, message } from '@matteopolak/framecord';
 import { Game, GameUser, Mode, User } from '@prisma/client';
-import { member } from '@util/forge';
-import { iter } from '@util/iter';
 import { prisma } from 'database';
 import {
 	CategoryChannel,
@@ -24,6 +16,22 @@ import {
 	VoiceBasedChannel,
 } from 'discord.js';
 import { inPlaceSort } from 'fast-sort';
+
+import { Connector } from '$/connectors/base';
+import {
+	modeAndGuildToQueueData,
+	PartyWithMemberProfiles,
+	QueueList,
+	reservedIds,
+} from '$/handlers/queue';
+import { member } from '$/util/forge';
+import { iter } from '$/util/iter';
+
+export const connectors = new Map<string, Connector>();
+
+export function addConnector(connector: Connector) {
+	connectors.set(connector.name, connector);
+}
 
 export type GameWithModeNameAndPlayers = Game & {
 	users: GameUser[];
@@ -343,6 +351,7 @@ export class GameManager extends Handler {
 				voiceChannelIds: {
 					set: voice.map(v => v.id),
 				},
+				guildId: guild.id,
 				users: {
 					createMany: {
 						data: players,
@@ -406,7 +415,15 @@ export class GameManager extends Handler {
 	) {
 		++this.activeGames;
 
-		await this.createGame(queue, parties, guild);
+		const game = await this.createGame(queue, parties, guild);
+
+		if (queue.mode.connector !== null) {
+			const connector = connectors.get(queue.mode.connector);
+
+			if (connector) {
+				await connector.onGameStart(game);
+			}
+		}
 	}
 
 	@EventHandler()

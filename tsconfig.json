@@ -5,11 +5,7 @@
 		"module": "commonjs",
 		"baseUrl": "./src",
 		"paths": {
-			"@util/*": ["util/*"],
-			"@structs/*": ["structures/*"],
-			"@handlers/*": ["handlers/*"],
-			"@providers/*": ["providers/*"],
-			"@managers/*": ["managers/*"]
+			"$/*": ["*"]
 		},
 		"outDir": "./build",
 		"removeComments": true,

@@ -41,19 +41,19 @@ model GameUser {
 }
 
 model Game {
-  id              Int        @id @default(autoincrement())
-  state           State      @relation(fields: [stateId], references: [id])
-  stateId         Int
-  mode            Mode       @relation(fields: [modeId], references: [id])
-  modeId          Int
-  users           GameUser[]
-  lastPickIndex   Int        @default(-1) @db.SmallInt
-  remainingIds    String[]
-  textChannelId   String     @unique
+  id        Int        @id @default(autoincrement())
+  state     State      @relation(fields: [stateId], references: [id])
+  stateId   Int
+  mode      Mode       @relation(fields: [modeId], references: [id])
+  modeId    Int
+  users     GameUser[]
+  createdAt DateTime   @default(now())
+  startedAt DateTime?
+  endedAt   DateTime?
+
+  guildId         String
+  textChannelId   String   @unique
   voiceChannelIds String[]
-  createdAt       DateTime   @default(now())
-  startedAt       DateTime?
-  endedAt         DateTime?
 
   @@index([textChannelId])
   @@index([voiceChannelIds])
@@ -142,4 +142,7 @@ model MinecraftUser {
   id     Int  @id @default(autoincrement())
   user   User @relation(fields: [userId], references: [id])
   userId Int  @unique
+
+  username String
+  uuid     String @unique @db.Uuid
 }

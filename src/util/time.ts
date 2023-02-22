@@ -1,4 +1,4 @@
-import { iter } from './iter';
+import { iter } from '$/util/iter';
 
 export const TIME_PARSE_REGEX = /(\d+)(ms|s|m|h|d|w|mo|y)\s*/g;
 export const CHAR_TO_TIME_TABLE: Record<string, number> = {

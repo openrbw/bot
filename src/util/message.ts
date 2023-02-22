@@ -2,7 +2,7 @@ import { GameUser } from '@prisma/client';
 import { EmbedField } from 'discord.js';
 import { inPlaceSort } from 'fast-sort';
 
-import { iter } from './iter';
+import { iter } from '$/util/iter';
 
 /**
  *

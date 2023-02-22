@@ -1,4 +1,4 @@
-import { Client, Guild, GuildChannelType } from 'discord.js';
+import { CategoryChannel, ChannelType, Client, Guild, GuildChannelType, TextChannel, VoiceChannel } from 'discord.js';
 
 /** Creates a GuildMember */
 export function member(userId: string, guild: Guild) {
@@ -15,6 +15,9 @@ export function user(userId: string, client: Client) {
 }
 
 /** Creates a Channel */
+export function channel(channelId: string, type: ChannelType.GuildText, guild: Guild): TextChannel;
+export function channel(channelId: string, type: ChannelType.GuildVoice, guild: Guild): VoiceChannel;
+export function channel(channelId: string, type: ChannelType.GuildCategory, guild: Guild): CategoryChannel;
 export function channel(
 	channelId: string,
 	type: GuildChannelType,
