@@ -14,6 +14,7 @@ import { Attachment, ChannelType, Interaction } from 'discord.js';
 
 import { GameManager } from '$/managers/game';
 import { createTeamButtons } from '$/util/components';
+import { computeEloChange, GameResult } from '$/util/elo';
 import { iter } from '$/util/iter';
 import { playersToFields } from '$/util/message';
 
@@ -84,6 +85,19 @@ export default class ScoreCommand extends Command {
 		);
 	}
 
+	private async getModeFromGameId(gameId: number) {
+		const game = await prisma.game.findFirst({
+			where: {
+				id: gameId,
+			},
+			select: {
+				mode: true,
+			},
+		});
+
+		return game?.mode ?? null;
+	}
+
 	@EventHandler()
 	public async interactionCreate(interaction: Interaction) {
 		if (!interaction.isButton()) return;
@@ -95,21 +109,40 @@ export default class ScoreCommand extends Command {
 		const teamIndex = parseInt(teamIndexString);
 		const gameId = parseInt(gameIdString);
 
+		const mode = await this.getModeFromGameId(gameId);
+		if (mode === null) return;
+
 		const game = await prisma.game.findFirst({
 			where: {
 				id: gameId,
 			},
 			include: {
-				users: true,
+				users: {
+					include: {
+						user: {
+							include: {
+								profiles: {
+									where: {
+										modeId: mode.id,
+									},
+								},
+							},
+						},
+					},
+				},
 			},
 		});
 
 		if (game === null) return;
 
+		const scores = await computeEloChange(game.users, mode, GameResult.WIN, teamIndex);
+
 		await prisma.$transaction(
 			iter(game.users)
 				.map(p => {
 					const winner = p.team === teamIndex;
+					const score = scores.get(p.userId);
+					if (!score) return undefined!;
 
 					return prisma.profile.upsert({
 						where: {
@@ -119,25 +152,29 @@ export default class ScoreCommand extends Command {
 							},
 						},
 						update: {
-							wins: {
+							[winner ? 'wins' : 'losses']: {
 								increment: 1,
 							},
 							[winner ? 'winstreak' : 'losestreak']: {
 								increment: 1,
 							},
 							[winner ? 'losestreak' : 'winstreak']: 0,
-							rating: {
-								increment: winner ? 25 : -20,
-							},
+							phi: score.phi,
+							mu: score.mu,
+							rv: score.rv,
 						},
 						create: {
 							modeId: game.modeId,
 							userId: p.userId,
 							[winner ? 'wins' : 'losses']: 1,
 							[winner ? 'winstreak' : 'losestreak']: 1,
+							phi: score.phi,
+							mu: score.mu,
+							rv: score.rv,
 						},
 					});
 				})
+				.filter(p => p !== undefined)
 				.toArray()
 		);
 

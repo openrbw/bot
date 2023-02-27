@@ -118,11 +118,16 @@ class IterUtil<T> implements Iterable<T> {
 	}
 
 	public extract<R>(array: R[], mapper: TypedFunction<T, R>) {
-		for (const item of this.iterable) {
-			array.push(mapper(item));
-		}
+		const iterable = this.iterable;
+		const extract = function* () {
+			for (const item of iterable) {
+				array.push(mapper(item));
 
-		return this;
+				yield item;
+			}
+		};
+
+		return new IterUtil<T>(extract());
 	}
 
 	public chunk<N extends number>(size: N) {

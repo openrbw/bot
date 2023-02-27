@@ -74,7 +74,7 @@ model Faction {
 model User {
   id          Int        @id @default(autoincrement())
   discordId   String     @unique
-  bannedUntil BigInt?
+  bannedUntil DateTime?
   profiles    Profile[]
   createdAt   DateTime   @default(now())
   gameUsers   GameUser[]
@@ -101,7 +101,13 @@ model Profile {
   winstreak  Int  @default(0)
   losses     Int  @default(0)
   losestreak Int  @default(0)
-  rating     Int  @default(0)
+
+  // The rating deviation of the player, squared;
+  // default is (350 / SCALING_FACTOR) = 2.01476187242
+  phi Float @default(2.01476187242)
+  // The rating of the player
+  mu  Float @default(0)
+  rv  Float @default(0.06)
 
   @@id([modeId, userId])
 }

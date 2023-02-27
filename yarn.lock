@@ -728,6 +728,11 @@ fsevents@~2.3.2:
   resolved "https://registry.yarnpkg.com/fsevents/-/fsevents-2.3.2.tgz#8a526f78b8fdf4623b709e0b975c52c24c02fd1a"
   integrity sha512-xiqMQR4xAeHTuB9uWm+fFRcIOgKBMiOBP+eXiyT7jsgVCq1bkVygt00oASowB7EdtpOHaaPgKt812P9ab+DDKA==
 
+glicko2@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/glicko2/-/glicko2-1.1.0.tgz#7c2fdf36ee143396ea6bc7e40ce2002ebb5da654"
+  integrity sha512-IJ79p2NOEU984fbGhdbStTY1yzZ144NLtFYJWoNpHrM/kmpP7iV9JyRkq29gPz9VcRXjSu5iAF1omgYFtrMzWA==
+
 glob-parent@^5.1.2, glob-parent@~5.1.2:
   version "5.1.2"
   resolved "https://registry.yarnpkg.com/glob-parent/-/glob-parent-5.1.2.tgz#869832c58034fe68a4093c17dc15e8340d8401c4"
