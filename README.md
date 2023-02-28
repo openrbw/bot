@@ -1,6 +1,6 @@
-# Elo Matchmaker
+![Matchmaker logo](assets/logo.png)
 
-![Build Status](https://github.com/matteopolak/discord-elo-matchmaker/actions/workflows/ci.yml/badge.svg)
+![Build Status](https://github.com/matteopolak/matchmaker/actions/workflows/ci.yml/badge.svg)
 
 ## Features
 
@@ -13,8 +13,8 @@
 ## Installation
 
 ```powershell
-git clone "git@github.com/matteopolak/discord-elo-matchmaker.git"
-cd discord-elo-matchmaker
+git clone "git@github.com/matteopolak/matchmaker.git"
+cd matchmaker
 yarn install
 ```
 
