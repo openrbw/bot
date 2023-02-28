@@ -12,11 +12,11 @@ import { channels } from 'config';
 import { prisma } from 'database';
 import { Attachment, ChannelType, Interaction } from 'discord.js';
 
-import { GameManager } from '$/managers/game';
+import { GameManager, GameState } from '$/managers/game';
 import { createTeamButtons } from '$/util/components';
-import { computeEloChange, GameResult } from '$/util/elo';
-import { iter } from '$/util/iter';
+import { GameResult } from '$/util/elo';
 import { playersToFields } from '$/util/message';
+import { scoreGame } from '$/util/score';
 
 export default class ScoreCommand extends Command {
 	constructor(options: CommandOptions) {
@@ -43,13 +43,12 @@ export default class ScoreCommand extends Command {
 						user: true,
 					},
 				},
-				state: true,
 				mode: true,
 			},
 		});
 
 		if (game === null) throw 'This command can only be run in a game channel.';
-		if (game.state.index !== 0)
+		if (game.state < GameState.ACTIVE)
 			throw 'You can only score the game after it has started.';
 
 		const scoring = this.client.channels.cache.get(channels.scoring.channelId);
@@ -61,7 +60,7 @@ export default class ScoreCommand extends Command {
 				id: game.id,
 			},
 			data: {
-				stateId: 2,
+				state: GameState.SCORING,
 			},
 		});
 
@@ -104,9 +103,11 @@ export default class ScoreCommand extends Command {
 
 		const [key, gameIdString, teamIndexString] =
 			interaction.customId.split('.');
-		if (key !== 'team') return;
 
-		const teamIndex = parseInt(teamIndexString);
+		const isTie = key === 'tie';
+		if (!isTie && key !== 'team') return;
+
+		const teamIndex = isTie ? 0 : parseInt(teamIndexString);
 		const gameId = parseInt(gameIdString);
 
 		const mode = await this.getModeFromGameId(gameId);
@@ -117,6 +118,7 @@ export default class ScoreCommand extends Command {
 				id: gameId,
 			},
 			include: {
+				mode: true,
 				users: {
 					include: {
 						user: {
@@ -135,48 +137,21 @@ export default class ScoreCommand extends Command {
 
 		if (game === null) return;
 
-		const scores = await computeEloChange(game.users, mode, GameResult.WIN, teamIndex);
+		const [score] = isTie ? await scoreGame(game, GameResult.TIE) : await scoreGame(game, GameResult.WIN, teamIndex);
+		const scoring = this.client.channels.cache.get(channels.scoring.channelId);
 
-		await prisma.$transaction(
-			iter(game.users)
-				.map(p => {
-					const winner = p.team === teamIndex;
-					const score = scores.get(p.userId);
-					if (!score) return undefined!;
-
-					return prisma.profile.upsert({
-						where: {
-							modeId_userId: {
-								modeId: game.modeId,
-								userId: p.userId,
-							},
-						},
-						update: {
-							[winner ? 'wins' : 'losses']: {
-								increment: 1,
-							},
-							[winner ? 'winstreak' : 'losestreak']: {
-								increment: 1,
-							},
-							[winner ? 'losestreak' : 'winstreak']: 0,
-							phi: score.phi,
-							mu: score.mu,
-							rv: score.rv,
-						},
-						create: {
-							modeId: game.modeId,
-							userId: p.userId,
-							[winner ? 'wins' : 'losses']: 1,
-							[winner ? 'winstreak' : 'losestreak']: 1,
-							phi: score.phi,
-							mu: score.mu,
-							rv: score.rv,
-						},
-					});
-				})
-				.filter(p => p !== undefined)
-				.toArray()
-		);
+		if (scoring?.isTextBased()) {
+			message(scoring, {
+				embeds: embed({
+					title: `Game \`#${game.id}\``,
+					description: `Submitted by ${interaction.user}`,
+					fields: playersToFields(game.users, teamIndex, score),
+					image: {
+						url: game.proof!,
+					},
+				}).embeds,
+			});
+		}
 
 		await interaction.message.delete();
 	}

@@ -1,5 +1,5 @@
 import { EventHandler, Handler } from '@matteopolak/framecord';
-import { Mode, Party, Profile, State, User } from '@prisma/client';
+import { Mode, Party, Profile, User } from '@prisma/client';
 import { prisma } from 'database';
 import { ChannelType, VoiceState } from 'discord.js';
 import { inPlaceSort } from 'fast-sort';
@@ -8,12 +8,8 @@ import { GameManager } from '$/managers/game';
 import { iter } from '$/util/iter';
 import { stdev } from '$/util/math';
 
-export type ModeWithStates = Mode & {
-	states: State[];
-};
-
 export interface QueueList {
-	mode: ModeWithStates;
+	mode: Mode;
 	modeId: number;
 	guildId: string;
 	players: Set<string>;
@@ -149,6 +145,8 @@ export default class QueueHandler extends Handler {
 						leaderId: party.leaderId,
 						members: split,
 						id: party.id,
+						createdAt: party.createdAt,
+						updatedAt: party.updatedAt,
 					});
 				}
 			}
@@ -204,9 +202,6 @@ export default class QueueHandler extends Handler {
 					},
 				},
 			},
-			include: {
-				states: true,
-			},
 		});
 
 		if (!mode) return;
@@ -257,9 +252,6 @@ export default class QueueHandler extends Handler {
 						channelId: state.channelId,
 					},
 				},
-			},
-			include: {
-				states: true,
 			},
 		});
 

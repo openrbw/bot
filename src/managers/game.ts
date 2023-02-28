@@ -27,11 +27,23 @@ import {
 import { member } from '$/util/forge';
 import { iter } from '$/util/iter';
 
+export const enum GameState {
+	PRE_GAME,
+	ACTIVE,
+	SCORING,
+	POST_GAME,
+}
+
 export const connectors = new Map<string, Connector>();
 
 export function addConnector(connector: Connector) {
 	connectors.set(connector.name, connector);
 }
+
+export type GameWithModeNameAndPlayersWithProfiles = Game & {
+	users: GameUser[];
+	mode: Mode;
+};
 
 export type GameWithModeNameAndPlayers = Game & {
 	users: GameUser[];
@@ -345,7 +357,7 @@ export class GameManager extends Handler {
 		return await prisma.game.create({
 			data: {
 				id: gameId,
-				stateId: queue.mode.states[0].id,
+				state: GameState.ACTIVE,
 				modeId: queue.modeId,
 				textChannelId: text.id,
 				voiceChannelIds: {

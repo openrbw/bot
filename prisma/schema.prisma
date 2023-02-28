@@ -18,6 +18,9 @@ model Party {
   leaderId Int    @unique
   invites  User[] @relation("partyInvites")
   members  User[] @relation("partyMembers")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Queue {
@@ -26,6 +29,9 @@ model Queue {
   guildId   String
   mode      Mode   @relation(fields: [modeId], references: [id])
   modeId    Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([guildId, channelId])
 }
@@ -42,41 +48,44 @@ model GameUser {
 
 model Game {
   id        Int        @id @default(autoincrement())
-  state     State      @relation(fields: [stateId], references: [id])
-  stateId   Int
+  state     Int        @db.SmallInt
   mode      Mode       @relation(fields: [modeId], references: [id])
   modeId    Int
   users     GameUser[]
-  createdAt DateTime   @default(now())
-  startedAt DateTime?
   endedAt   DateTime?
+  startedAt DateTime?
 
   guildId         String
   textChannelId   String   @unique
   voiceChannelIds String[]
+  proof           String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([textChannelId])
   @@index([voiceChannelIds])
 }
 
 model Faction {
-  id         Int      @id @default(autoincrement())
-  leaderId   Int      @unique
-  leader     User     @relation("factionLeader", fields: [leaderId], references: [id])
+  id         Int     @id @default(autoincrement())
+  leaderId   Int     @unique
+  leader     User    @relation("factionLeader", fields: [leaderId], references: [id])
   name       String?
-  nameLower  String?  @unique
-  members    User[]   @relation("factionMembers")
-  invites    User[]   @relation("factionInvites")
-  experience Int      @default(0)
-  createdAt  DateTime @default(now())
+  nameLower  String? @unique
+  members    User[]  @relation("factionMembers")
+  invites    User[]  @relation("factionInvites")
+  experience Int     @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model User {
   id          Int        @id @default(autoincrement())
   discordId   String     @unique
-  bannedUntil DateTime?
+  bannedUntil BigInt?
   profiles    Profile[]
-  createdAt   DateTime   @default(now())
   gameUsers   GameUser[]
 
   party        Party?  @relation("partyMembers", fields: [partyId], references: [id])
@@ -90,6 +99,9 @@ model User {
   factionId      Int?
 
   minecraft MinecraftUser?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Profile {
@@ -105,9 +117,15 @@ model Profile {
   // The rating deviation of the player, squared;
   // default is (350 / SCALING_FACTOR) = 2.01476187242
   phi Float @default(2.01476187242)
-  // The rating of the player
+  // The rating of the player, using the Glicko2 scale
   mu  Float @default(0)
   rv  Float @default(0.06)
+
+  // The rating of the player
+  rating Int @default(400)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@id([modeId, userId])
 }
@@ -124,17 +142,9 @@ model Mode {
   profiles       Profile[]
   queues         Queue[]
   games          Game[]
-  states         State[]
-}
 
-model State {
-  id      Int     @id @default(autoincrement())
-  name    String
-  enabled Boolean @default(true)
-  index   Int     @default(0) @db.SmallInt
-  games   Game[]
-  mode    Mode    @relation(fields: [modeId], references: [id])
-  modeId  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Event {
@@ -151,4 +161,7 @@ model MinecraftUser {
 
   username String
   uuid     String @unique @db.Uuid
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

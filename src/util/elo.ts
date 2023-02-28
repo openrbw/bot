@@ -88,7 +88,7 @@ function findRoot(f: (x: number) => number, a: number, b: number): number {
  * @param mode
  * @param winners A set of team indices for the winning (or tying) teams. Teams not present in this list are considered losing.
  */
-export function computeEloChange(users: GameUserWithProfile[], mode: Mode, result: GameResult.TIE): Map<number, GlickoCalculation>;
+export function computeEloChange(users: GameUserWithProfile[], mode: Mode, result: GameResult.TIE, winner?: number): Map<number, GlickoCalculation>;
 export function computeEloChange(users: GameUserWithProfile[], mode: Mode, result: GameResult.WIN, winner: number): Map<number, GlickoCalculation>;
 export function computeEloChange(users: GameUserWithProfile[], mode: Mode, result: GameResult, winner?: number): Map<number, GlickoCalculation> {
 	// Ensure that the users are sorted by team, starting with team 0
@@ -152,7 +152,7 @@ export function computeEloChange(users: GameUserWithProfile[], mode: Mode, resul
 
 			const oPrime = Math.exp(A / 2);
 			const ø2Prime = 1 / (1 / phi2 + 1 / variance);
-			const muPrime = profile.mu + ø2Prime * delta;
+			const muPrime = ø2Prime * delta;
 
 			results.set(player.id, {
 				mu: muPrime,

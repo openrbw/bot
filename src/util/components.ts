@@ -17,7 +17,16 @@ export function createTeamButtons(gameId: number, teams: number) {
 			components: [],
 		};
 
-		for (; teams % 5 !== 0; ++j) {
+		if (i === 0) {
+			rows[i].components.push({
+				label: 'Tie',
+				customId: `tie.${gameId}`,
+				style: ButtonStyle.Primary,
+				type: ComponentType.Button,
+			});
+		}
+
+		for (; rows[i].components.length < 5; ++j) {
 			rows[i].components.push({
 				label: `Team ${j + 1}`,
 				customId: `team.${gameId}.${j}`,
