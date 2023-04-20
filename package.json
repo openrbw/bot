@@ -6,18 +6,18 @@
 	"scripts": {
 		"build": "tsc --project tsconfig.json && tsc-alias -p tsconfig.json",
 		"check": "tsc --project tsconfig.json --noEmit",
-		"start": "yarn run build && node build/index.js"
+		"start": "pnpm run build && node build/index.js"
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/matteopolak/matchmaker.git"
+		"url": "git+https://github.com/openrbw/bot.git"
 	},
 	"author": "Matthew Polak <contact@matteopolak.com>",
 	"license": "GPL-3.0",
 	"bugs": {
-		"url": "https://github.com/matteopolak/matchmaker/issues"
+		"url": "https://github.com/openrbw/bot/issues"
 	},
-	"homepage": "https://github.com/matteopolak/matchmaker#readme",
+	"homepage": "https://github.com/openrbw/bot#readme",
 	"devDependencies": {
 		"@typescript-eslint/eslint-plugin": "^5.40.0",
 		"@typescript-eslint/parser": "^5.40.0",
