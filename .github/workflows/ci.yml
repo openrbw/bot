@@ -12,13 +12,13 @@ jobs:
         uses: actions/setup-node@v2.5.1
         with:
           node-version: 16.x
-          cache: "yarn"
+          cache: "pnpm"
 
       - name: Install modules
-        run: yarn
+        run: pnpm install
 
       - name: Run ESLint
-        run: yarn eslint src/**/*.ts
+        run: pnpm eslint src/**/*.ts
 
       - name: Run TypeScript
-        run: yarn tsc --project tsconfig.json --noEmit
+        run: pnpm tsc --project tsconfig.json --noEmit
