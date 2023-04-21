@@ -21,7 +21,7 @@ jobs:
         run: pnpm install
 
       - name: Install Prisma client
-        run: prisma generate
+        run: pnpm exec prisma generate
 
       - name: Run ESLint
         run: pnpm eslint src/**/*.ts
