@@ -39,4 +39,8 @@ export default class DeleteModeCommand extends Command {
 
 		return `Successfully deleted the mode \`${mode.name}\`.`;
 	}
+
+	public async catch(_: Error, __: CommandSource, name: string) {
+		throw `The mode \`${name}\` does not exist.`;
+	}
 }
