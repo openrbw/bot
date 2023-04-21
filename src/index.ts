@@ -14,7 +14,7 @@ config.formatting.padFields = false;
 
 (async () => {
 	const client = new Client({
-		intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMembers],
+		intents: [IntentsBitField.Flags.Guilds, IntentsBitField.Flags.GuildMembers, IntentsBitField.Flags.GuildVoiceStates],
 		verbose: false,
 	});
 

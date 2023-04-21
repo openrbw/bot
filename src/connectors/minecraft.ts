@@ -230,14 +230,16 @@ export class MinecraftConnector extends Connector {
 			.toArray()
 			.join('\n');
 
-		await message(
-			channel(
-				game.textChannelId,
-				ChannelType.GuildText,
-				this.client.guilds.cache.get(game.guildId)!
-			),
-			{ content }
-		);
+		if (content) {
+			await message(
+				channel(
+					game.textChannelId,
+					ChannelType.GuildText,
+					this.client.guilds.cache.get(game.guildId)!
+				),
+				{ content }
+			);
+		}
 	}
 
 	public async score(input: GameScoreInput): Promise<ScoreResult | null> {

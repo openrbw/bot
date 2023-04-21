@@ -18,7 +18,8 @@
 			{
 				"SwitchCase": 1,
 				"flatTernaryExpressions": true,
-				"offsetTernaryExpressions": false
+				"offsetTernaryExpressions": false,
+				"ignoredNodes": ["TemplateLiteral"]
 			}
 		],
 		"linebreak-style": ["error", "unix"],

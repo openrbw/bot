@@ -122,13 +122,11 @@ export class GameManager extends Handler {
 			});
 		}
 
-		const number = await prisma.game.findFirst({
-			orderBy: {
-				id: 'desc',
-			},
-		});
+		const number: { nextval: bigint }[] = await prisma.$queryRaw`
+			SELECT nextval(format('%I', 'Game_id_seq'));
+		`;
 
-		GameManager.number = number?.id ?? 0;
+		GameManager.number = Number(number[0].nextval);
 	}
 
 	/**
@@ -366,7 +364,11 @@ export class GameManager extends Handler {
 				guildId: guild.id,
 				users: {
 					createMany: {
-						data: players,
+						data: players.map(p => ({
+							userId: p.userId,
+							team: p.team,
+							index: p.index,
+						})),
 					},
 				},
 			},
@@ -394,7 +396,7 @@ export class GameManager extends Handler {
 					.get(`${guild.id}.${game.mode.name}`)
 					?.map(q => `<@${q.channelId}>`)
 					.join('\n') || 'No queue channels found :('
-				}`,
+					}`,
 				fields: [
 					{
 						name: 'Reason',

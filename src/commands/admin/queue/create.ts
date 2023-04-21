@@ -4,6 +4,7 @@ import {
 	Command,
 	CommandOptions,
 	CommandSource,
+	EventHandler,
 } from '@matteopolak/framecord';
 import { prisma } from 'database';
 import { ChannelType, Events, Interaction, PermissionFlagsBits } from 'discord.js';
@@ -31,6 +32,7 @@ export default class CreateQueueCommand extends Command {
 		);
 	}
 
+	@EventHandler()
 	public async [Events.InteractionCreate](interaction: Interaction) {
 		if (!interaction.isAutocomplete()) return;
 		if (!this.is(interaction)) return;
@@ -42,7 +44,6 @@ export default class CreateQueueCommand extends Command {
 				},
 			},
 			select: {
-				id: true,
 				name: true,
 			},
 			take: 25,
@@ -51,7 +52,7 @@ export default class CreateQueueCommand extends Command {
 		if (modes.length) {
 			return interaction.respond(modes.map(m => ({
 				name: m.name,
-				value: m.id,
+				value: m.name,
 			})));
 		}
 
@@ -68,7 +69,7 @@ export default class CreateQueueCommand extends Command {
 
 		return interaction.respond(defaultModes.map(m => ({
 			name: m.name,
-			value: m.id,
+			value: m.name,
 		})));
 	}
 

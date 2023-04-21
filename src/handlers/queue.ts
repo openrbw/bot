@@ -60,7 +60,9 @@ export default class QueueHandler extends Handler {
 				n => party.members.length + n <= config.playersPerTeam
 			);
 
-			if (index === -1) return false;
+			if (index === -1) {
+				return false;
+			}
 
 			teams[index] += party.members.length;
 		}
@@ -75,6 +77,10 @@ export default class QueueHandler extends Handler {
 
 		const teamSize = queue.mode.playersPerTeam;
 		const size = teamSize * queue.mode.teams;
+
+		const discordIdFilter = iter(queue.players)
+			.filter(p => !reservedIds.has(p))
+			.toArray();
 
 		const parties = await prisma.party.findMany({
 			where: {
@@ -100,12 +106,12 @@ export default class QueueHandler extends Handler {
 									},
 								],
 							},
+							{
+								discordId: {
+									in: discordIdFilter,
+								},
+							},
 						],
-						discordId: {
-							in: iter(queue.players)
-								.filter(p => !reservedIds.has(p))
-								.toArray(),
-						},
 					},
 				},
 			},
@@ -123,6 +129,44 @@ export default class QueueHandler extends Handler {
 				},
 			},
 		});
+
+		const solos = await prisma.user.findMany({
+			where: {
+				OR: [
+					{
+						bannedUntil: {
+							equals: null,
+						},
+					},
+					{
+						bannedUntil: {
+							lt: Date.now(),
+							not: 0,
+						},
+					},
+				],
+				discordId: {
+					in: discordIdFilter,
+				},
+			},
+			include: {
+				profiles: {
+					where: {
+						modeId: {
+							equals: queue.modeId,
+						},
+					},
+				},
+			},
+		});
+
+		parties.push(...solos.map(u => ({
+			id: u.id,
+			leaderId: u.id,
+			members: [u],
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		})));
 
 		// Get the party count beforehand so the newly-created parties
 		// are not checked
