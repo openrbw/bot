@@ -11,15 +11,44 @@
 * Support for multiple games
 * Automatic scoring with Tesseract OCR
 
-## Installation
+## Requirements
 
-```powershell
-git clone "git@github.com/openrbw/bot.git" && cd bot
-pnpm install
+* Tesseract
+* `Server Members` Intent
+* Node.js 18.0.0+
+
+## Setup
+
+1. Clone the repository
+
+```bash
+git clone git@github.com:openrbw/bot.git
 ```
 
-## Deploy
+2. Install dependencies
 
-```powershell
-pnpm run start
+```bash
+pnpm install
+# or
+yarn install
+# or
+npm install
+```
+
+3. Modify the [configuration file](./src/config.ts)
+
+4. Modify the `.env` file
+
+```bash
+cp .env.example .env
+```
+
+5. Run the bot
+
+```bash
+pnpm start
+# or
+yarn start
+# or
+npm start
 ```
