@@ -31,7 +31,7 @@
 		"typescript": "^4.8.4"
 	},
 	"dependencies": {
-		"@matteopolak/framecord": "^1.6.0",
+		"@matteopolak/framecord": "^1.6.1",
 		"@prisma/client": "^4.5.0",
 		"@types/string-similarity": "^4.0.0",
 		"axios": "^1.1.3",

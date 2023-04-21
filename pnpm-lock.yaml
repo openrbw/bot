@@ -1,7 +1,7 @@
 lockfileVersion: 5.4
 
 specifiers:
-  '@matteopolak/framecord': ^1.6.0
+  '@matteopolak/framecord': ^1.6.1
   '@prisma/client': ^4.5.0
   '@types/string-similarity': ^4.0.0
   '@typescript-eslint/eslint-plugin': ^5.40.0
@@ -23,7 +23,7 @@ specifiers:
   typescript: ^4.8.4
 
 dependencies:
-  '@matteopolak/framecord': 1.6.0
+  '@matteopolak/framecord': 1.6.1
   '@prisma/client': 4.13.0_prisma@4.13.0
   '@types/string-similarity': 4.0.0
   axios: 1.3.6
@@ -149,8 +149,8 @@ packages:
     resolution: {integrity: sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==}
     dev: true
 
-  /@matteopolak/framecord/1.6.0:
-    resolution: {integrity: sha512-v5jsonFXATuOElBqpnpLP8eYooZtMeV/nKg7SFjaXiX/Os7FQcxI4R996ZTuNvyxHApLRLpZYVrS/nOEsVKlQw==}
+  /@matteopolak/framecord/1.6.1:
+    resolution: {integrity: sha512-M1xpZKp4hCRwszUrXALkrRyrxUvUCW+Zlcc72YVvfV5aSk09773RxUyuWzfSM+Q/MfUOmOdTLoL26062LFa/jg==}
     dependencies:
       discord.js: 14.9.0
     transitivePeerDependencies:

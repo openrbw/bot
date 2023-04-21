@@ -39,6 +39,7 @@ export abstract class Connector {
 	public abstract findMany(discordIds: string[]): Promise<ConnectorUser[]>;
 
 	public abstract verify(user: User, code: string): Promise<ConnectorUser>;
+	public abstract unlink(user: User): Promise<ConnectorUser>;
 	public abstract update(discordId: string): Promise<ConnectorUser>;
 
 	public abstract onGameStart(game: Game): Promise<void>;

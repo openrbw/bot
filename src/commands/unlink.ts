@@ -1,32 +1,26 @@
-import { Argument, ArgumentType, Command, CommandOptions, CommandSource } from '@matteopolak/framecord';
+import { Argument, ArgumentType, Command, CommandOptions, CommandSource, EventHandler } from '@matteopolak/framecord';
 import { escapeMarkdown, Events, Interaction } from 'discord.js';
 
 import { connectors } from '$/managers/game';
 import { iter } from '$/util/iter';
 
-export default class Verify extends Command {
+export default class Unlink extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 
-		this.description = 'Verifies your account with a connector.';
+		this.description = 'Links your account with a connector.';
 
 		this.arguments.push(
 			new Argument({
 				name: 'connector',
-				description: 'The connector to verify with.',
+				description: 'The connector to unlink from.',
 				type: ArgumentType.String,
 				autocomplete: true,
-			}),
-			new Argument({
-				name: 'code',
-				description: 'The code to verify with.',
-				type: ArgumentType.String,
-				maxLength: 36,
-				minLength: 1,
 			})
 		);
 	}
 
+	@EventHandler()
 	public async [Events.InteractionCreate](interaction: Interaction) {
 		if (!interaction.isAutocomplete()) return;
 		if (!this.is(interaction)) return;
@@ -57,13 +51,13 @@ export default class Verify extends Command {
 		return interaction.respond(defaultConnectors);
 	}
 
-	public async run(source: CommandSource, connectorName: string, code: string) {
+	public async run(source: CommandSource, connectorName: string) {
 		const connector = connectors.get(connectorName);
 		if (!connector) return `The connector \`${escapeMarkdown(connectorName)}\` does not exist.`;
 
-		const user = await connector.verify(source.user, code);
+		const user = await connector.unlink(source.user);
 
-		return `Successfully verified your account with \`${escapeMarkdown(connectorName)}\` as \`${escapeMarkdown(user.username)}\`.`;
+		return `Successfully unlinked your account from \`${escapeMarkdown(connectorName)}\` as \`${escapeMarkdown(user.username)}\`.`;
 	}
 
 	public async catch(error: Error) {

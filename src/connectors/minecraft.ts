@@ -81,6 +81,33 @@ export class MinecraftConnector extends Connector {
 		return users;
 	}
 
+	public async unlink(user: User): Promise<ConnectorUser> {
+		try {
+			const data = await prisma.$transaction(async t => {
+				const dbUser = await t.user.findUnique({
+					where: {
+						discordId: user.id,
+					},
+					select: {
+						id: true,
+					},
+				});
+
+				if (dbUser === null) throw 'You are not linked to a Minecraft account';
+
+				return await t.minecraftUser.delete({
+					where: {
+						userId: dbUser.id,
+					},
+				});
+			});
+
+			return data;
+		} catch {
+			throw 'You are not linked to a Minecraft account';
+		}
+	}
+
 	public async verify(user: User, code: string): Promise<ConnectorUser> {
 		if (CODE_REGEX.test(code)) {
 			// Check linked Hypixel account
@@ -121,7 +148,7 @@ export class MinecraftConnector extends Connector {
 
 		// Check linked Hypixel account
 		const player = await this.api.player(code);
-		if (player === null) throw 'Could not verify Minecraft account ownership.';
+		if (player === null || player.socialMedia?.links?.DISCORD !== user.tag) throw 'Could not verify Minecraft account ownership.';
 
 		const data = await prisma.minecraftUser.upsert({
 			where: {
