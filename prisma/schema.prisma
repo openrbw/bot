@@ -113,6 +113,7 @@ model Profile {
   winstreak  Int  @default(0)
   losses     Int  @default(0)
   losestreak Int  @default(0)
+  mvps       Int  @default(0)
 
   // The rating deviation of the player, squared;
   // default is (350 / SCALING_FACTOR) = 2.01476187242
@@ -132,6 +133,7 @@ model Profile {
 
 model Mode {
   id             Int       @id @default(autoincrement())
+  category       String
   connector      String?
   name           String
   nameLower      String    @unique

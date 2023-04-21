@@ -1,14 +1,26 @@
 import { Client, message } from '@matteopolak/framecord';
+import { Game, GameUser, MinecraftUser, Mode, Profile, User as DbUser } from '@prisma/client';
 import axios from 'axios';
 import { prisma } from 'database';
 import { ChannelType, User } from 'discord.js';
 import { HypixelAPI } from 'hypixel-api-v2';
 
 import { GameWithPlayers } from '$/managers/game';
+import { parse } from '$/ocr/bedwars';
 import { channel } from '$/util/forge';
 import { iter } from '$/util/iter';
 
-import { Connector, ConnectorUser } from './base';
+import { Connector, ConnectorUser, GameScoreInput, ScoreResult } from './base';
+
+export type GameScoreMinecraftInput = Game & {
+	mode: Mode
+	users: (GameUser & {
+		user: DbUser & {
+			minecraft: MinecraftUser
+			profiles: Profile[]
+		}
+	})[]
+}
 
 type AuthResponse = {
 	success: false;
@@ -24,7 +36,7 @@ export class MinecraftConnector extends Connector {
 	public readonly name = 'minecraft';
 	private readonly api: HypixelAPI;
 
-	public constructor(client: Client) {
+	constructor(client: Client) {
 		super(client);
 
 		const key = process.env.HYPIXEL_API_KEY;
@@ -199,5 +211,35 @@ export class MinecraftConnector extends Connector {
 			),
 			{ content }
 		);
+	}
+
+	public async score(input: GameScoreInput): Promise<ScoreResult | null> {
+		if (input.mode.category !== 'bedwars') return null;
+
+		const game = await prisma.game.findFirst({
+			where: {
+				id: input.id,
+			},
+			include: {
+				users: {
+					include: {
+						user: {
+							include: {
+								minecraft: true,
+							},
+						},
+					},
+				},
+				mode: true,
+			},
+		});
+
+		if (game === null || game.users.some(u => u.user.minecraft === null)) return null;
+
+		const result = await parse(game as GameScoreMinecraftInput);
+
+		if (typeof result === 'string') return null;
+
+		return result;
 	}
 }

@@ -12,7 +12,7 @@ import { channels } from 'config';
 import { prisma } from 'database';
 import { Attachment, ChannelType, Interaction } from 'discord.js';
 
-import { GameManager, GameState } from '$/managers/game';
+import { connectors, GameManager, GameState } from '$/managers/game';
 import { createTeamButtons } from '$/util/components';
 import { GameResult } from '$/util/elo';
 import { playersToFields } from '$/util/message';
@@ -61,8 +61,26 @@ export default class ScoreCommand extends Command {
 			},
 			data: {
 				state: GameState.SCORING,
+				proof: proof.url,
 			},
 		});
+
+		const connector = game.mode.connector && connectors.get(game.mode.connector);
+
+		if (connector) {
+			const result = await connector.score(game);
+
+			if (result !== null) {
+				await scoreGame(result.game, GameResult.WIN, result.winner, result);
+
+				return void GameManager.close(
+					game,
+					source.guild,
+					source.channel!,
+					'The game has been automatically scored.'
+				);
+			}
+		}
 
 		message(scoring, {
 			embeds: embed({
@@ -135,22 +153,10 @@ export default class ScoreCommand extends Command {
 			},
 		});
 
-		if (game === null) return;
-
-		const [score] = isTie ? await scoreGame(game, GameResult.TIE) : await scoreGame(game, GameResult.WIN, teamIndex);
-		const scoring = this.client.channels.cache.get(channels.scoring.channelId);
-
-		if (scoring?.isTextBased()) {
-			message(scoring, {
-				embeds: embed({
-					title: `Game \`#${game.id}\``,
-					description: `Submitted by ${interaction.user}`,
-					fields: playersToFields(game.users, teamIndex, score),
-					image: {
-						url: game.proof!,
-					},
-				}).embeds,
-			});
+		if (game !== null) {
+			if (isTie)
+				await scoreGame(game, GameResult.TIE);
+			else await scoreGame(game, GameResult.WIN, teamIndex);
 		}
 
 		await interaction.message.delete();

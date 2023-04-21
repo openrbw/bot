@@ -4,7 +4,7 @@ import { escapeMarkdown, Events, Interaction } from 'discord.js';
 import { connectors } from '$/managers/game';
 import { iter } from '$/util/iter';
 
-export class Verify extends Command {
+export default class Verify extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 

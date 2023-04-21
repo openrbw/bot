@@ -9,6 +9,7 @@
 * Factions
 * Custom modes
 * Support for multiple games
+* Automatic scoring with Tesseract OCR
 
 ## Installation
 

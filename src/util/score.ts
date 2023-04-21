@@ -1,5 +1,6 @@
 import { Game, Mode, Profile } from '@prisma/client';
 
+import { ScoreResult } from '$/connectors/base';
 import { prisma } from '$/database';
 
 import { computeEloChange, GameResult, GameUserWithProfile, GlickoCalculation, muToRating } from './elo';
@@ -10,9 +11,9 @@ export type GameWithModeNameAndPlayersWithProfiles = Game & {
 	mode: Mode;
 }
 
-export async function scoreGame(game: GameWithModeNameAndPlayersWithProfiles, result: GameResult.TIE, winnerIdx?: number): Promise<[Map<number, GlickoCalculation>, Profile[]]>;
-export async function scoreGame(game: GameWithModeNameAndPlayersWithProfiles, result: GameResult.WIN, winnerIdx: number): Promise<[Map<number, GlickoCalculation>, Profile[]]>;
-export async function scoreGame(game: GameWithModeNameAndPlayersWithProfiles, result: GameResult, winnerIdx?: number): Promise<[Map<number, GlickoCalculation>, Profile[]]> {
+export async function scoreGame(game: GameWithModeNameAndPlayersWithProfiles, result: GameResult.TIE, winnerIdx?: number, scoreResult?: ScoreResult): Promise<[Map<number, GlickoCalculation>, Profile[]]>;
+export async function scoreGame(game: GameWithModeNameAndPlayersWithProfiles, result: GameResult.WIN, winnerIdx: number, scoreResult?: ScoreResult): Promise<[Map<number, GlickoCalculation>, Profile[]]>;
+export async function scoreGame(game: GameWithModeNameAndPlayersWithProfiles, result: GameResult, winnerIdx?: number, scoreResult?: ScoreResult): Promise<[Map<number, GlickoCalculation>, Profile[]]> {
 	const scores = result === GameResult.TIE ? computeEloChange(game.users, game.mode, result) : computeEloChange(game.users, game.mode, result, winnerIdx!);
 
 	return [
@@ -47,6 +48,7 @@ export async function scoreGame(game: GameWithModeNameAndPlayersWithProfiles, re
 							},
 							rv: score.rv,
 							rating,
+							...scoreResult?.update(p),
 						},
 						create: {
 							modeId: game.modeId,
@@ -57,6 +59,7 @@ export async function scoreGame(game: GameWithModeNameAndPlayersWithProfiles, re
 							mu: score.mu,
 							rv: score.rv,
 							rating,
+							...scoreResult?.create(p),
 						},
 					});
 				})
