@@ -133,7 +133,7 @@ model Profile {
 
 model Mode {
   id             Int       @id @default(autoincrement())
-  category       String
+  category       String?
   connector      String?
   name           String
   nameLower      String    @unique

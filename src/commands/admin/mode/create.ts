@@ -22,11 +22,6 @@ export default class CreateModeCommand extends Command {
 				type: ArgumentType.String,
 			}),
 			new Argument({
-				name: 'category',
-				description: 'The category of the mode (bedwars for OCR)',
-				type: ArgumentType.String,
-			}),
-			new Argument({
 				name: 'teams',
 				description: 'The number of teams',
 				type: ArgumentType.Integer,
@@ -52,6 +47,12 @@ export default class CreateModeCommand extends Command {
 				description: 'The connector',
 				type: ArgumentType.String,
 				required: false,
+			}),
+			new Argument({
+				name: 'category',
+				description: 'The category of the mode (bedwars for OCR)',
+				type: ArgumentType.String,
+				required: false,
 			})
 		);
 	}
@@ -59,11 +60,11 @@ export default class CreateModeCommand extends Command {
 	public async run(
 		_: CommandSource,
 		name: string,
-		category: string,
 		teams?: number,
 		playersPerTeam?: number,
 		maximumStdDev?: number,
-		connector?: string
+		connector?: string,
+		category?: string
 	) {
 		const mode = await prisma.mode.create({
 			data: {

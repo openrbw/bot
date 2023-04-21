@@ -47,6 +47,12 @@ export default class EditModeCommand extends Command {
 				description: 'The connector',
 				type: ArgumentType.String,
 				required: false,
+			}),
+			new Argument({
+				name: 'category',
+				description: 'The category',
+				type: ArgumentType.String,
+				required: false,
 			})
 		);
 	}
@@ -57,7 +63,8 @@ export default class EditModeCommand extends Command {
 		teams?: number,
 		playersPerTeam?: number,
 		maximumStdDev?: number,
-		connector?: string
+		connector?: string,
+		category?: string
 	) {
 		const mode = await prisma.mode.update({
 			where: {
@@ -69,6 +76,7 @@ export default class EditModeCommand extends Command {
 				playersPerTeam,
 				maximumStdDev,
 				connector,
+				category,
 			},
 			select: {
 				name: true,
