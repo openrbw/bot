@@ -41,6 +41,21 @@ export default class DeleteModeCommand extends Command {
 	}
 
 	public async catch(_: Error, __: CommandSource, name: string) {
+		const queues = await prisma.queue.findMany({
+			where: {
+				mode: {
+					nameLower: name.toLowerCase(),
+				},
+			},
+			select: {
+				channelId: true,
+			},
+		});
+
+		if (queues.length) {
+			throw `The mode \`${name}\` is being used by the following queues:\n${queues.map(q => `<#${q.channelId}>`).join('\n')}`;
+		}
+
 		throw `The mode \`${name}\` does not exist.`;
 	}
 }
