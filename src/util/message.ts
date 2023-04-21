@@ -18,7 +18,7 @@ const formatter = new Intl.NumberFormat('en-US', {
  * @returns `EmbedField`s where the name is "Title #{team}" and the value is the user tags of the players on the team
  */
 export function playersToFields(
-	players: Omit<GameUser, 'gameId'>[],
+	players: Omit<GameUser & { user: { discordId: string } }, 'gameId'>[],
 	winnerIdx?: number,
 	score?: Map<number, GlickoCalculation>
 ): EmbedField[] {
@@ -39,7 +39,7 @@ export function playersToFields(
 		.groupBy(p => p.team)
 		.map((t, i) => ({
 			name: `Team #${i + 1}${i === winnerIdx ? ' 🏆' : ''}`,
-			value: t.map(p => `<@${p}>`).join('\n'),
+			value: t.map(p => `<@${p.user.discordId}>`).join('\n'),
 			inline: true,
 		}))
 		.toArray();
