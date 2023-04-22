@@ -91,7 +91,7 @@ export default class ScoreCommand extends Command {
 					url: proof.url,
 				},
 			}).embeds,
-			components: createTeamButtons(game.mode.teams, game.id),
+			components: createTeamButtons(game.id, game.mode.teams),
 		});
 
 		return void GameManager.close(

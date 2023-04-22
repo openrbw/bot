@@ -5,7 +5,7 @@ export interface QueueConfig {
 export const channels = {
 	scoring: {
 		guildId: '968627637444558918',
-		channelId: '1015327471102611586',
+		channelId: '1099136136007393401',
 	},
 };
 
