@@ -96,7 +96,8 @@ export class GameManager extends Handler {
 	> = new Collection();
 	protected static number = 0;
 
-	public async init() {
+	@EventHandler()
+	public async ready() {
 		const categories = await prisma.category.findMany();
 
 		const invalid = iter(categories)
@@ -444,6 +445,6 @@ export class GameManager extends Handler {
 	public async channelDelete(channel: DMChannel | NonThreadGuildBasedChannel) {
 		if (channel.type !== ChannelType.GuildCategory) return;
 
-		GameManager.categories.delete(channel.id);
+		GameManager.categories.get(channel.guildId)?.delete(channel.id);
 	}
 }

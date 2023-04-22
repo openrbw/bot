@@ -220,7 +220,7 @@ export default class QueueHandler extends Handler {
 				slice.flatMap(s => s.members.map(m => m.profiles[0]?.rating ?? 0))
 			);
 
-			if (deviation > queue.mode.maximumStdDev) continue;
+			if (queue.mode.maximumStdDev !== -1 && deviation > queue.mode.maximumStdDev) continue;
 			if (!this.isSliceValid(slice, queue.mode)) continue;
 
 			if (deviation < lowestStdev) {

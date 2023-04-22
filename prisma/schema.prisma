@@ -139,7 +139,7 @@ model Mode {
   nameLower      String    @unique
   teams          Int       @default(2) @db.SmallInt
   playersPerTeam Int       @default(4) @db.SmallInt
-  maximumStdDev  Float     @default(100)
+  maximumStdDev  Float     @default(-1)
   enabled        Boolean   @default(true)
   profiles       Profile[]
   queues         Queue[]
