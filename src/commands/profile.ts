@@ -85,6 +85,10 @@ export default class ProfileCommand extends Command {
 		}) ?? {
 			wins: 0,
 			losses: 0,
+			mvps: 0,
+			rating: 400,
+			winstreak: 0,
+			losestreak: 0,
 		};
 
 		return embed({
@@ -97,6 +101,21 @@ export default class ProfileCommand extends Command {
 			},
 			fields: [
 				{
+					name: 'Rating',
+					value: profile.rating.toString(),
+					inline: true,
+				},
+				{
+					name: 'W/L',
+					value: (profile.wins / (profile.losses || 1)).toFixed(2),
+					inline: true,
+				},
+				{
+					name: 'MVPs',
+					value: profile.mvps.toString(),
+					inline: true,
+				},
+				{
 					name: 'Wins',
 					value: profile.wins.toString(),
 					inline: true,
@@ -106,9 +125,13 @@ export default class ProfileCommand extends Command {
 					value: profile.losses.toString(),
 					inline: true,
 				},
-				{
-					name: 'W/L',
-					value: (profile.wins / (profile.losses || 1)).toFixed(2),
+				profile.losestreak > 0 ? {
+					name: 'Lose Streak',
+					value: profile.losestreak.toString(),
+					inline: true,
+				} : {
+					name: 'Win Streak',
+					value: profile.winstreak.toString(),
 					inline: true,
 				},
 			],
