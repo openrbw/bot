@@ -137,7 +137,6 @@ model Mode {
   connector      String?
   name           String
   nameLower      String    @unique
-  displayName    String?
   teams          Int       @default(2) @db.SmallInt
   playersPerTeam Int       @default(4) @db.SmallInt
   maximumStdDev  Float     @default(-1)

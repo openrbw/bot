@@ -4,9 +4,10 @@ import {
 	Command,
 	CommandOptions,
 	CommandSource,
+	EventHandler,
 } from '@matteopolak/framecord';
 import { prisma } from 'database';
-import { PermissionFlagsBits } from 'discord.js';
+import { Events, Interaction, PermissionFlagsBits } from 'discord.js';
 
 export default class EditModeCommand extends Command {
 	constructor(options: CommandOptions) {
@@ -20,10 +21,11 @@ export default class EditModeCommand extends Command {
 				name: 'name',
 				description: 'The name of the mode',
 				type: ArgumentType.String,
+				autocomplete: true,
 			}),
 			new Argument({
-				name: 'display_name',
-				description: 'The display name of the mode',
+				name: 'new_name',
+				description: 'The new name of the mode',
 				type: ArgumentType.String,
 				required: false,
 			}),
@@ -63,10 +65,51 @@ export default class EditModeCommand extends Command {
 		);
 	}
 
+	@EventHandler()
+	public async [Events.InteractionCreate](interaction: Interaction) {
+		if (!interaction.isAutocomplete()) return;
+		if (!this.is(interaction)) return;
+
+		const modes = await prisma.mode.findMany({
+			where: {
+				nameLower: {
+					contains: interaction.options.getString('name', true).toLowerCase(),
+				},
+			},
+			select: {
+				name: true,
+			},
+			take: 25,
+		});
+
+		if (modes.length) {
+			return interaction.respond(modes.map(m => ({
+				name: m.name,
+				value: m.name,
+			})));
+		}
+
+		const defaultModes = await prisma.mode.findMany({
+			orderBy: {
+				name: 'asc',
+			},
+			select: {
+				id: true,
+				name: true,
+			},
+			take: 25,
+		});
+
+		return interaction.respond(defaultModes.map(m => ({
+			name: m.name,
+			value: m.name,
+		})));
+	}
+
 	public async run(
 		_: CommandSource,
 		name: string,
-		displayName?: string,
+		newName?: string,
 		teams?: number,
 		playersPerTeam?: number,
 		maximumStdDev?: number,
@@ -78,8 +121,8 @@ export default class EditModeCommand extends Command {
 				nameLower: name.toLowerCase(),
 			},
 			data: {
-				name,
-				displayName,
+				name: newName,
+				nameLower: newName?.toLowerCase(),
 				teams,
 				playersPerTeam,
 				maximumStdDev,
@@ -91,10 +134,10 @@ export default class EditModeCommand extends Command {
 			},
 		});
 
-		return `Successfully created the mode \`${mode.name}\`.`;
+		return `Successfully edited the mode \`${mode.name}\`.`;
 	}
 
-	public async catch(_: Error, __: CommandSource, name: string) {
-		throw `The mode \`${name}\` does not exist. Maybe try \`/admin mode create\` instead?`;
+	public async catch(_: Error, __: CommandSource, name: string, newName?: string) {
+		throw `The mode \`${name}\` does not exist${newName !== undefined ? ` or the name \`${newName}\` does not exist` : ''}. Maybe try \`/admin mode create\` instead?`;
 	}
 }
