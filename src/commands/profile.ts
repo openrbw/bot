@@ -93,7 +93,7 @@ export default class ProfileCommand extends Command {
 
 		return embed({
 			author: {
-				name: `${user.tag}'s ${mode.name} Profile`,
+				name: `${user.tag}'s ${mode.displayName ?? mode.name} Profile`,
 				icon_url: user.displayAvatarURL(),
 			},
 			fields: [

@@ -22,6 +22,12 @@ export default class CreateModeCommand extends Command {
 				type: ArgumentType.String,
 			}),
 			new Argument({
+				name: 'display_name',
+				description: 'The display name of the mode',
+				type: ArgumentType.String,
+				required: false,
+			}),
+			new Argument({
 				name: 'teams',
 				description: 'The number of teams',
 				type: ArgumentType.Integer,
@@ -60,6 +66,7 @@ export default class CreateModeCommand extends Command {
 	public async run(
 		_: CommandSource,
 		name: string,
+		displayName?: string,
 		teams?: number,
 		playersPerTeam?: number,
 		maximumStdDev?: number,
@@ -70,6 +77,7 @@ export default class CreateModeCommand extends Command {
 			data: {
 				name,
 				nameLower: name.toLowerCase(),
+				displayName,
 				teams,
 				playersPerTeam,
 				maximumStdDev,
