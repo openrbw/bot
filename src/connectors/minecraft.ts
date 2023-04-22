@@ -255,6 +255,11 @@ export class MinecraftConnector extends Connector {
 						user: {
 							include: {
 								minecraft: true,
+								profiles: {
+									where: {
+										modeId: input.mode.id,
+									},
+								},
 							},
 						},
 					},

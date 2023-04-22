@@ -82,10 +82,10 @@ export default class ProfileCommand extends Command {
 				},
 				modeId: mode.id,
 			},
-		});
-
-		if (profile === null)
-			throw `${user} has not played \`${mode.name}\` yet.`;
+		}) ?? {
+			wins: 0,
+			losses: 0,
+		};
 
 		return embed({
 			author: {
