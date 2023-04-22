@@ -394,8 +394,8 @@ export class GameManager extends Handler {
 			embed({
 				title: 'Game Finished',
 				description: `Want to play again?\n${modeAndGuildToQueueData
-					.get(`${guild.id}.${game.mode.name}`)
-					?.map(q => `<@${q.channelId}>`)
+					.get(`${guild.id}.${game.mode.id}`)
+					?.map(q => `<#${q.channelId}>`)
 					.join('\n') || 'No queue channels found :('
 					}`,
 				fields: [
