@@ -26,7 +26,7 @@ export function createTeamButtons(gameId: number, teams: number) {
 			});
 		}
 
-		for (; rows[i].components.length < 5; ++j) {
+		for (; rows[i].components.length < 5 && teams-- > 0; ++j) {
 			rows[i].components.push({
 				label: `Team ${j + 1}`,
 				customId: `team.${gameId}.${j}`,

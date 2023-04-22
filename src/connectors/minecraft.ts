@@ -218,7 +218,7 @@ export class MinecraftConnector extends Connector {
 		const players = await prisma.minecraftUser.findMany({
 			where: {
 				userId: {
-					in: game.users.map(p => p.id),
+					in: game.users.map(p => p.userId),
 				},
 			},
 		});

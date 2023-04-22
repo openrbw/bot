@@ -14,7 +14,7 @@ export type GameWithModeNameAndPlayersWithProfiles = Game & {
 export async function scoreGame(game: GameWithModeNameAndPlayersWithProfiles, result: GameResult.TIE, winnerIdx?: number, scoreResult?: ScoreResult): Promise<[Map<number, GlickoCalculation>, Profile[]]>;
 export async function scoreGame(game: GameWithModeNameAndPlayersWithProfiles, result: GameResult.WIN, winnerIdx: number, scoreResult?: ScoreResult): Promise<[Map<number, GlickoCalculation>, Profile[]]>;
 export async function scoreGame(game: GameWithModeNameAndPlayersWithProfiles, result: GameResult, winnerIdx?: number, scoreResult?: ScoreResult): Promise<[Map<number, GlickoCalculation>, Profile[]]> {
-	const scores = result === GameResult.TIE ? computeEloChange(game.users, game.mode, result) : computeEloChange(game.users, game.mode, result, winnerIdx!);
+	const scores = result === GameResult.TIE ? computeEloChange(game.users, result) : computeEloChange(game.users, result, winnerIdx!);
 
 	return [
 		scores,

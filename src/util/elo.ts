@@ -1,4 +1,4 @@
-import { GameUser, Mode, Profile, User } from '@prisma/client';
+import { GameUser, Profile, User } from '@prisma/client';
 
 import { iter } from './iter';
 
@@ -60,7 +60,7 @@ function findRoot(f: (x: number) => number, a: number, b: number): number {
 	let cs0 = 0;
 	let cs1 = 1;
 
-	for (;;) {
+	for (; ;) {
 		const fa = f(a);
 		const fb = f(b);
 
@@ -88,9 +88,9 @@ function findRoot(f: (x: number) => number, a: number, b: number): number {
  * @param mode
  * @param winners A set of team indices for the winning (or tying) teams. Teams not present in this list are considered losing.
  */
-export function computeEloChange(users: GameUserWithProfile[], mode: Mode, result: GameResult.TIE, winner?: number): Map<number, GlickoCalculation>;
-export function computeEloChange(users: GameUserWithProfile[], mode: Mode, result: GameResult.WIN, winner: number): Map<number, GlickoCalculation>;
-export function computeEloChange(users: GameUserWithProfile[], mode: Mode, result: GameResult, winner?: number): Map<number, GlickoCalculation> {
+export function computeEloChange(users: GameUserWithProfile[], result: GameResult.TIE, winner?: number): Map<number, GlickoCalculation>;
+export function computeEloChange(users: GameUserWithProfile[], result: GameResult.WIN, winner: number): Map<number, GlickoCalculation>;
+export function computeEloChange(users: GameUserWithProfile[], result: GameResult, winner?: number): Map<number, GlickoCalculation> {
 	// Ensure that the users are sorted by team, starting with team 0
 	users.sort((a, b) => a.team - b.team);
 
@@ -154,7 +154,7 @@ export function computeEloChange(users: GameUserWithProfile[], mode: Mode, resul
 			const ø2Prime = 1 / (1 / phi2 + 1 / variance);
 			const muPrime = ø2Prime * delta;
 
-			results.set(player.id, {
+			results.set(player.userId, {
 				mu: muPrime,
 				phi: Math.sqrt(ø2Prime),
 				rv: oPrime,

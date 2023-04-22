@@ -250,6 +250,15 @@ export default class QueueHandler extends Handler {
 
 		if (!mode) return;
 
+		const userId = await prisma.user.findUnique({
+			where: {
+				discordId: state.id,
+			},
+			select: {
+				id: true,
+			},
+		});
+
 		const user = await prisma.user.upsert({
 			where: {
 				discordId: state.id,
@@ -262,7 +271,22 @@ export default class QueueHandler extends Handler {
 					},
 				},
 			},
-			update: {},
+			update: {
+				profiles: {
+					upsert: {
+						where: {
+							modeId_userId: {
+								modeId: mode.id,
+								userId: userId?.id ?? -1,
+							},
+						},
+						create: {
+							modeId: mode.id,
+						},
+						update: {},
+					},
+				},
+			},
 		});
 
 		if (!user) return;
