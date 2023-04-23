@@ -1,12 +1,15 @@
+import { CommandSource, embed, message } from '@matteopolak/framecord';
 import { Game, Mode, PrismaPromise, Profile } from '@prisma/client';
-import { Guild } from 'discord.js';
+import { Guild, GuildTextBasedChannel } from 'discord.js';
 
 import { ScoreResult } from '$/connectors/base';
 import { prisma } from '$/database';
-import { GameState } from '$/managers/game';
+import { GameState, GameWithModeNameAndPlayersWithDiscordIds } from '$/managers/game';
 
+import { createTeamButtons } from './components';
 import { computeEloChange, GameResult, GameUserWithProfile, GlickoCalculation, muToRating } from './elo';
 import { iter } from './iter';
+import { playersToFields } from './message';
 import { computeRoleChanges } from './role';
 
 export type GameWithModeNameAndPlayersWithProfiles = Game & {
@@ -14,16 +17,16 @@ export type GameWithModeNameAndPlayersWithProfiles = Game & {
 	mode: Mode;
 }
 
-const DEFAULT_PHI = 2.01476187242;
-const DEFAULT_MU = 0;
-const DEFAULT_RV = 0.06;
-const DEFAULT_RATING = 400;
+export const DEFAULT_PHI = 2.01476187242;
+export const DEFAULT_MU = 0;
+export const DEFAULT_RV = 0.06;
+export const DEFAULT_RATING = 400;
 
 export async function scoreGame(guild: Guild, game: GameWithModeNameAndPlayersWithProfiles, result: GameResult.TIE, winnerIdx?: number, scoreResult?: ScoreResult): Promise<[Map<number, GlickoCalculation>, Profile[]]>;
 export async function scoreGame(guild: Guild, game: GameWithModeNameAndPlayersWithProfiles, result: GameResult.WIN, winnerIdx: number, scoreResult?: ScoreResult): Promise<[Map<number, GlickoCalculation>, Profile[]]>;
 export async function scoreGame(guild: Guild, game: GameWithModeNameAndPlayersWithProfiles, result: GameResult, winnerIdx?: number, scoreResult?: ScoreResult): Promise<[Map<number, GlickoCalculation>, Profile[]]> {
 	const scores = result === GameResult.TIE ? computeEloChange(game.users, result) : computeEloChange(game.users, result, winnerIdx!);
-	const roleChangePromises = [];
+	const roleChangePromises: Promise<unknown>[] = [];
 
 	const otherQueries: PrismaPromise<unknown>[] = [];
 
@@ -54,9 +57,7 @@ export async function scoreGame(guild: Guild, game: GameWithModeNameAndPlayersWi
 
 				const rating = muToRating(score.mu);
 
-				roleChangePromises.push(async () => {
-					const roles = await computeRoleChanges(game.guildId, game.modeId, oldProfile.rating, rating);
-
+				roleChangePromises.push(computeRoleChanges(game.guildId, game.modeId, oldProfile.rating, rating).then(async roles => {
 					for (const role of roles.add) {
 						await guild.members.addRole({
 							user: p.user.discordId,
@@ -70,7 +71,7 @@ export async function scoreGame(guild: Guild, game: GameWithModeNameAndPlayersWi
 							role: role.roleId,
 						});
 					}
-				});
+				}));
 
 				otherQueries.push(prisma.gameUser.update({
 					where: {
@@ -127,9 +128,24 @@ export async function scoreGame(guild: Guild, game: GameWithModeNameAndPlayersWi
 	);
 
 	await prisma.$transaction(otherQueries);
+	await Promise.all(roleChangePromises);
 
 	return [
 		scores,
 		profiles,
 	];
+}
+
+export async function sendToScore(scoringChannel: GuildTextBasedChannel, source: CommandSource, game: GameWithModeNameAndPlayersWithDiscordIds) {
+	await message(scoringChannel, {
+		embeds: embed({
+			title: `Game \`#${game.id}\``,
+			description: `Submitted by ${source.user}`,
+			fields: playersToFields(game.users),
+			image: {
+				url: game.proof!,
+			},
+		}).embeds,
+		components: createTeamButtons(game.id, game.mode.teams),
+	});
 }

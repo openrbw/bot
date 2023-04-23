@@ -4,19 +4,15 @@ import {
 	Command,
 	CommandOptions,
 	CommandSource,
-	embed,
 	EventHandler,
-	message,
 } from '@matteopolak/framecord';
 import { channels } from 'config';
 import { prisma } from 'database';
 import { Attachment, ChannelType, Interaction } from 'discord.js';
 
 import { connectors, GameManager, GameState } from '$/managers/game';
-import { createTeamButtons } from '$/util/components';
 import { GameResult } from '$/util/elo';
-import { playersToFields } from '$/util/message';
-import { scoreGame } from '$/util/score';
+import { scoreGame, sendToScore } from '$/util/score';
 
 export default class ScoreCommand extends Command {
 	constructor(options: CommandOptions) {
@@ -65,6 +61,8 @@ export default class ScoreCommand extends Command {
 			},
 		});
 
+		game.proof = proof.url;
+
 		const connector = game.mode.connector && connectors.get(game.mode.connector);
 
 		if (connector) {
@@ -82,17 +80,7 @@ export default class ScoreCommand extends Command {
 			}
 		}
 
-		message(scoring, {
-			embeds: embed({
-				title: `Game \`#${game.id}\``,
-				description: `Submitted by ${source.user}`,
-				fields: playersToFields(game.users),
-				image: {
-					url: proof.url,
-				},
-			}).embeds,
-			components: createTeamButtons(game.id, game.mode.teams),
-		});
+		await sendToScore(scoring, source, game);
 
 		return void GameManager.close(
 			game,
