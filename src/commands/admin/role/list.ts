@@ -7,6 +7,8 @@ import {
 import { prisma } from 'database';
 import { PermissionFlagsBits } from 'discord.js';
 
+import { iter } from '$/util/iter';
+
 export default class ListRoleCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
@@ -24,11 +26,25 @@ export default class ListRoleCommand extends Command {
 			orderBy: {
 				ratingMin: 'asc',
 			},
+			select: {
+				roleId: true,
+				ratingMin: true,
+				ratingMax: true,
+				mode: {
+					select: {
+						name: true,
+						id: true,
+					},
+				},
+			},
 		});
 
 		return embed({
 			title: `Rating roles (${roles.length})`,
-			description: roles.map(r => `<@&${r.roleId}> \`${r.ratingMin}${r.ratingMax !== null ? `\`-\`${r.ratingMax}\`` : '+`'}`).join('\n'),
+			fields: iter(roles).groupBy(r => r.mode.id).map(roles => ({
+				name: roles[0].mode.name,
+				value: roles.map(r => `<@&${r.roleId}> (\`${r.ratingMin}${r.ratingMax === null ? '' : `\`-\`${r.ratingMax}`}\`)`).join('\n'),
+			})).toArray(),
 		});
 	}
 }
