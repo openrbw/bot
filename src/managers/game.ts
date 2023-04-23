@@ -460,5 +460,11 @@ export class GameManager extends Handler {
 		if (channel.type !== ChannelType.GuildCategory) return;
 
 		GameManager.categories.get(channel.guildId)?.delete(channel.id);
+
+		await prisma.category.delete({
+			where: {
+				id: channel.id,
+			},
+		});
 	}
 }
