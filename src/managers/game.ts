@@ -81,9 +81,6 @@ const DEFAULT_VOICE_ALLOW_PERMISSIONS =
 	PermissionsBitField.Flags.Speak &
 	PermissionsBitField.Flags.ViewChannel;
 
-const DEFAULT_VOICE_DENY_PERMISSIONS =
-	PermissionsBitField.Flags.ViewChannel;
-
 const DEFAULT_TEXT_ALLOW_PERMISSIONS =
 	PermissionsBitField.Flags.ViewChannel &
 	PermissionsBitField.Flags.SendMessages &
@@ -156,6 +153,13 @@ export class GameManager extends Handler {
 		const created = await guild.channels.create({
 			name: 'Games',
 			type: ChannelType.GuildCategory,
+			permissionOverwrites: [
+				{
+					id: guild.roles.everyone.id,
+					type: OverwriteType.Role,
+					deny: DEFAULT_TEXT_DENY_PERMISSIONS,
+				},
+			],
 		});
 
 		categories.set(created.id, created);
@@ -291,11 +295,6 @@ export class GameManager extends Handler {
 			)
 			.toArray();
 
-		textPermissionOverwrites.push({
-			id: guild.roles.everyone.id,
-			deny: DEFAULT_TEXT_DENY_PERMISSIONS,
-		});
-
 		const text = await category.children.create({
 			name: `Game #${gameId}`,
 			permissionOverwrites: textPermissionOverwrites,
@@ -315,11 +314,6 @@ export class GameManager extends Handler {
 						allow: DEFAULT_VOICE_ALLOW_PERMISSIONS,
 					}))
 					.toArray();
-
-				voicePermissionOverwrites.push({
-					id: guild.roles.everyone.id,
-					deny: DEFAULT_VOICE_DENY_PERMISSIONS,
-				});
 
 				permissions[index] = voicePermissionOverwrites;
 			} else {
