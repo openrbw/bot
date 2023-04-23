@@ -4,6 +4,7 @@ import {
 	Command,
 	CommandOptions,
 	CommandSource,
+	EventHandler,
 } from '@matteopolak/framecord';
 import { prisma } from 'database';
 import { ChannelType, PermissionFlagsBits, VoiceChannel } from 'discord.js';
@@ -48,5 +49,17 @@ export default class DeleteQueueCommand extends Command {
 
 	public async catch() {
 		throw 'An error ocurred while trying to delete the queue channel. Please try again later.';
+	}
+
+	@EventHandler()
+	public async channelDelete(channel: VoiceChannel) {
+		await prisma.queue.delete({
+			where: {
+				guildId_channelId: {
+					guildId: channel.guild.id,
+					channelId: channel.id,
+				},
+			},
+		});
 	}
 }

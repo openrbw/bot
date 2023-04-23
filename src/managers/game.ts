@@ -81,11 +81,17 @@ const DEFAULT_VOICE_ALLOW_PERMISSIONS =
 	PermissionsBitField.Flags.Speak &
 	PermissionsBitField.Flags.ViewChannel;
 
+const DEFAULT_VOICE_DENY_PERMISSIONS =
+	PermissionsBitField.Flags.ViewChannel;
+
 const DEFAULT_TEXT_ALLOW_PERMISSIONS =
 	PermissionsBitField.Flags.ViewChannel &
 	PermissionsBitField.Flags.SendMessages &
 	PermissionsBitField.Flags.ReadMessageHistory &
 	PermissionsBitField.Flags.AddReactions;
+
+const DEFAULT_TEXT_DENY_PERMISSIONS =
+	PermissionsBitField.Flags.ViewChannel;
 
 export class GameManager extends Handler {
 	public static activeGames = 0;
@@ -276,16 +282,23 @@ export class GameManager extends Handler {
 		const teamCount = queue.mode.teams;
 		const category = await this.getCategoryWithCapacity(guild, teamCount + 1);
 
+		const textPermissionOverwrites: OverwriteResolvable[] = iter(parties)
+			.flatMap(p =>
+				p.members.map(m => ({
+					id: m.discordId,
+					allow: DEFAULT_TEXT_ALLOW_PERMISSIONS,
+				}))
+			)
+			.toArray();
+
+		textPermissionOverwrites.push({
+			id: guild.roles.everyone.id,
+			deny: DEFAULT_TEXT_DENY_PERMISSIONS,
+		});
+
 		const text = await category.children.create({
 			name: `Game #${gameId}`,
-			permissionOverwrites: iter(parties)
-				.flatMap(p =>
-					p.members.map(m => ({
-						id: m.discordId,
-						allow: DEFAULT_TEXT_ALLOW_PERMISSIONS,
-					}))
-				)
-				.toArray(),
+			permissionOverwrites: textPermissionOverwrites,
 		});
 
 		const permissions: OverwriteResolvable[][] = Array.from(
@@ -295,13 +308,20 @@ export class GameManager extends Handler {
 
 		for (const [index, party] of parties.entries()) {
 			if (index < teamCount) {
-				permissions[index] = iter(party.members)
+				const voicePermissionOverwrites: OverwriteResolvable[] = iter(party.members)
 					.map(m => ({
 						id: m.discordId,
 						type: OverwriteType.Member,
 						allow: DEFAULT_VOICE_ALLOW_PERMISSIONS,
 					}))
 					.toArray();
+
+				voicePermissionOverwrites.push({
+					id: guild.roles.everyone.id,
+					deny: DEFAULT_VOICE_DENY_PERMISSIONS,
+				});
+
+				permissions[index] = voicePermissionOverwrites;
 			} else {
 				permissions[0].push(
 					...iter(party.members).map(m => ({

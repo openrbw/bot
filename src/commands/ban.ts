@@ -94,23 +94,23 @@ export default class BanCommand extends Command {
 		duration: number,
 		overwrite: boolean
 	) {
-		const updated = await prisma.user.update({
+		const updated = await prisma.user.upsert({
 			where: {
 				discordId: user.id,
 			},
-			data: {
+			update: {
 				bannedUntil: {
 					[overwrite ? 'set' : 'increment']: overwrite
 						? Date.now() + duration
 						: duration,
 				},
 			},
+			create: {
+				discordId: user.id,
+				bannedUntil: Date.now() + duration,
+			},
 		});
 
 		return `${user}'s ban will expire <t:${updated.bannedUntil! / 1_000n}:R>`;
-	}
-
-	public async catch(error: Error, source: CommandSource, user: User) {
-		throw `${user} is not registered so they cannot be banned.`;
 	}
 }

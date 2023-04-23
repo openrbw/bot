@@ -167,3 +167,15 @@ model MinecraftUser {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model Role {
+  roleId    String @id
+  guildId   String
+  ratingMin Int
+  ratingMax Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([guildId, roleId])
+}

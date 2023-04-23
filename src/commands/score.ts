@@ -71,7 +71,7 @@ export default class ScoreCommand extends Command {
 			const result = await connector.score(game);
 
 			if (result !== null) {
-				await scoreGame(result.game, GameResult.WIN, result.winner, result);
+				await scoreGame(source.guild, result.game, GameResult.WIN, result.winner, result);
 
 				return void GameManager.close(
 					game,
@@ -117,7 +117,7 @@ export default class ScoreCommand extends Command {
 
 	@EventHandler()
 	public async interactionCreate(interaction: Interaction) {
-		if (!interaction.isButton()) return;
+		if (!interaction.isButton() || interaction.guild === null) return;
 
 		const [key, gameIdString, teamIndexString] =
 			interaction.customId.split('.');
@@ -155,8 +155,8 @@ export default class ScoreCommand extends Command {
 
 		if (game !== null) {
 			if (isTie)
-				await scoreGame(game, GameResult.TIE);
-			else await scoreGame(game, GameResult.WIN, teamIndex);
+				await scoreGame(interaction.guild, game, GameResult.TIE);
+			else await scoreGame(interaction.guild, game, GameResult.WIN, teamIndex);
 		}
 
 		await interaction.message.delete();
