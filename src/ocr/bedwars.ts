@@ -374,7 +374,7 @@ async function _parse(
 		create(user) {
 			const create: Partial<ScoreResultCreate> = {};
 
-			if (mvps.has(user.id)) {
+			if (mvps.has(user.userId)) {
 				create.mvps = 1;
 			}
 
@@ -383,7 +383,7 @@ async function _parse(
 		update(user) {
 			const update: Partial<ScoreResultUpdate> = {};
 
-			if (mvps.has(user.id)) {
+			if (mvps.has(user.userId)) {
 				update.mvps = {
 					increment: 1,
 				};
