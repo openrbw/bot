@@ -37,13 +37,18 @@ model Queue {
 }
 
 model GameUser {
-  id     Int  @id @default(autoincrement())
   team   Int  @db.SmallInt
   index  Int  @db.SmallInt
   user   User @relation(fields: [userId], references: [id])
   userId Int
   game   Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
   gameId Int
+
+  phi Float?
+  mu  Float?
+  rv  Float?
+
+  @@id([gameId, userId])
 }
 
 model Game {
@@ -59,6 +64,7 @@ model Game {
   textChannelId   String   @unique
   voiceChannelIds String[]
   proof           String?
+  winner          Int?     @db.SmallInt
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

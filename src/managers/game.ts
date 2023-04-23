@@ -183,7 +183,7 @@ export class GameManager extends Handler {
 	private static createTeams(
 		queue: QueueList,
 		parties: PartyWithMemberProfiles[]
-	): Omit<GameUserWithDiscordId, 'gameId' | 'id'>[] {
+	): Omit<GameUserWithDiscordId, 'gameId' | 'id' | 'mu' | 'rv' | 'phi'>[] {
 		const config = queue.mode;
 
 		// Sort parties by member count, then by average rating if they're equal
@@ -386,6 +386,7 @@ export class GameManager extends Handler {
 						})),
 					},
 				},
+				startedAt: new Date(),
 			},
 			include: {
 				users: true,

@@ -25,3 +25,7 @@ export function parseTimeString(time: string) {
 		0
 	);
 }
+
+export function timeToDiscordStamp(date: Date) {
+	return `<t:${Math.floor(date.getTime() / 1000)}:R>`;
+}
