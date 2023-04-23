@@ -1,5 +1,5 @@
 import { CommandSource, embed, message } from '@matteopolak/framecord';
-import { Game, Mode, PrismaPromise, Profile } from '@prisma/client';
+import { Game, Mode, Profile } from '@prisma/client';
 import { Guild, GuildTextBasedChannel } from 'discord.js';
 
 import { ScoreResult } from '$/connectors/base';
@@ -8,7 +8,6 @@ import { GameState, GameWithModeNameAndPlayersWithDiscordIds } from '$/managers/
 
 import { createTeamButtons } from './components';
 import { computeEloChange, GameResult, GameUserWithProfile, GlickoCalculation, muToRating } from './elo';
-import { iter } from './iter';
 import { playersToFields } from './message';
 import { computeRoleChanges } from './role';
 
@@ -26,109 +25,107 @@ export async function scoreGame(guild: Guild, game: GameWithModeNameAndPlayersWi
 export async function scoreGame(guild: Guild, game: GameWithModeNameAndPlayersWithProfiles, result: GameResult.WIN, winnerIdx: number, scoreResult?: ScoreResult): Promise<[Map<number, GlickoCalculation>, Profile[]]>;
 export async function scoreGame(guild: Guild, game: GameWithModeNameAndPlayersWithProfiles, result: GameResult, winnerIdx?: number, scoreResult?: ScoreResult): Promise<[Map<number, GlickoCalculation>, Profile[]]> {
 	const scores = result === GameResult.TIE ? computeEloChange(game.users, result) : computeEloChange(game.users, result, winnerIdx!);
+
 	const roleChangePromises: Promise<unknown>[] = [];
+	const profiles: Profile[] = [];
 
-	const otherQueries: PrismaPromise<unknown>[] = [];
+	await prisma.$transaction(async tx => {
+		await tx.game.update({
+			where: {
+				id: game.id,
+			},
+			data: {
+				winner: result === GameResult.WIN && winnerIdx !== undefined ? winnerIdx : undefined,
+				state: GameState.POST_GAME,
+				endedAt: new Date(),
+				proof: game.proof,
+			},
+		});
 
-	otherQueries.push(prisma.game.update({
-		where: {
-			id: game.id,
-		},
-		data: {
-			winner: result === GameResult.WIN && winnerIdx !== undefined ? winnerIdx : undefined,
-			state: GameState.POST_GAME,
-			endedAt: new Date(),
-		},
-	}));
+		for (const player of game.users) {
+			const winner = player.team === winnerIdx;
+			const score = scores.get(player.userId);
 
-	const profiles = await prisma.$transaction(
-		iter(game.users)
-			.map(p => {
-				const winner = p.team === winnerIdx;
-				const score = scores.get(p.userId);
-				if (!score) return undefined!;
+			if (!score) throw new Error(`Score not found for <@${player.user.discordId}>.`);
 
-				const oldProfile = p.user.profiles[0] ?? {
-					phi: DEFAULT_PHI,
-					mu: DEFAULT_MU,
-					rv: DEFAULT_RV,
-					rating: DEFAULT_RATING,
-				};
+			const oldProfile = player.user.profiles[0] ?? {
+				phi: DEFAULT_PHI,
+				mu: DEFAULT_MU,
+				rv: DEFAULT_RV,
+				rating: DEFAULT_RATING,
+			};
 
-				const rating = muToRating(score.mu);
+			const rating = muToRating(score.mu);
 
-				roleChangePromises.push(computeRoleChanges(game.guildId, game.modeId, oldProfile.rating, rating).then(async roles => {
-					for (const role of roles.add) {
-						await guild.members.addRole({
-							user: p.user.discordId,
-							role: role.roleId,
-						});
-					}
+			roleChangePromises.push(computeRoleChanges(game.guildId, game.modeId, oldProfile.rating, rating).then(async roles => {
+				for (const role of roles.add) {
+					await guild.members.addRole({
+						user: player.user.discordId,
+						role: role.roleId,
+					});
+				}
 
-					for (const role of roles.remove) {
-						await guild.members.removeRole({
-							user: p.user.discordId,
-							role: role.roleId,
-						});
-					}
-				}));
+				for (const role of roles.remove) {
+					await guild.members.removeRole({
+						user: player.user.discordId,
+						role: role.roleId,
+					});
+				}
+			}));
 
-				otherQueries.push(prisma.gameUser.update({
-					where: {
-						gameId_userId: {
-							gameId: game.id,
-							userId: p.userId,
-						},
+			await tx.gameUser.update({
+				where: {
+					gameId_userId: {
+						gameId: game.id,
+						userId: player.userId,
 					},
-					data: {
-						phi: score.phi - oldProfile.phi,
-						mu: score.mu - oldProfile.mu,
-						rv: score.rv - oldProfile.rv,
-					},
-				}));
+				},
+				data: {
+					phi: score.phi - oldProfile.phi,
+					mu: score.mu - oldProfile.mu,
+					rv: score.rv - oldProfile.rv,
+				},
+			});
 
-				return prisma.profile.upsert({
-					where: {
-						modeId_userId: {
-							modeId: game.modeId,
-							userId: p.userId,
-						},
-					},
-					update: {
-						[winner ? 'wins' : 'losses']: {
-							increment: 1,
-						},
-						[winner ? 'winstreak' : 'losestreak']: {
-							increment: 1,
-						},
-						[winner ? 'losestreak' : 'winstreak']: 0,
-						phi: score.phi,
-						mu: {
-							increment: score.mu,
-						},
-						rv: score.rv,
-						rating,
-						...scoreResult?.update(p),
-					},
-					create: {
+			profiles.push(await tx.profile.upsert({
+				where: {
+					modeId_userId: {
 						modeId: game.modeId,
-						userId: p.userId,
-						[winner ? 'wins' : 'losses']: 1,
-						[winner ? 'winstreak' : 'losestreak']: 1,
-						phi: score.phi,
-						mu: score.mu,
-						rv: score.rv,
-						rating,
-						...scoreResult?.create(p),
+						userId: player.userId,
 					},
-				});
-			})
-			.filter(p => p !== undefined)
-			.toArray()
-	);
+				},
+				update: {
+					[winner ? 'wins' : 'losses']: {
+						increment: 1,
+					},
+					[winner ? 'winstreak' : 'losestreak']: {
+						increment: 1,
+					},
+					[winner ? 'losestreak' : 'winstreak']: 0,
+					phi: score.phi,
+					mu: {
+						increment: score.mu,
+					},
+					rv: score.rv,
+					rating,
+					...scoreResult?.update(player),
+				},
+				create: {
+					modeId: game.modeId,
+					userId: player.userId,
+					[winner ? 'wins' : 'losses']: 1,
+					[winner ? 'winstreak' : 'losestreak']: 1,
+					phi: score.phi,
+					mu: score.mu,
+					rv: score.rv,
+					rating,
+					...scoreResult?.create(player),
+				},
+			}));
+		}
+	});
 
-	await prisma.$transaction(otherQueries);
-	await Promise.all(roleChangePromises);
+	await Promise.allSettled(roleChangePromises);
 
 	return [
 		scores,

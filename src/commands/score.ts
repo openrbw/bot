@@ -51,33 +51,30 @@ export default class ScoreCommand extends Command {
 		if (!scoring || scoring.type !== ChannelType.GuildText)
 			throw 'The scoring channel has not been set up. Please try again later.';
 
-		await prisma.game.update({
-			where: {
-				id: game.id,
-			},
-			data: {
-				state: GameState.SCORING,
-				proof: proof.url,
-			},
-		});
-
 		game.proof = proof.url;
 
-		const connector = game.mode.connector && connectors.get(game.mode.connector);
+		const connector = game.mode.connector ? connectors.get(game.mode.connector) : null;
+		const result = await connector?.score(game);
 
-		if (connector) {
-			const result = await connector.score(game);
+		if (result) {
+			await scoreGame(source.guild, result.game, GameResult.WIN, result.winner, result);
 
-			if (result !== null) {
-				await scoreGame(source.guild, result.game, GameResult.WIN, result.winner, result);
-
-				return void GameManager.close(
-					game,
-					source.guild,
-					source.channel!,
-					'The game has been automatically scored.'
-				);
-			}
+			return void GameManager.close(
+				game,
+				source.guild,
+				source.channel!,
+				'The game has been automatically scored.'
+			);
+		} else {
+			await prisma.game.update({
+				where: {
+					id: game.id,
+				},
+				data: {
+					state: GameState.SCORING,
+					proof: proof.url,
+				},
+			});
 		}
 
 		await sendToScore(scoring, source, game);
