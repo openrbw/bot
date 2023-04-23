@@ -32,17 +32,18 @@ export default class CreateRoleCommand extends Command {
 				description: 'The maximum rating threshold for the role',
 				type: ArgumentType.Integer,
 				minValue: 0,
+				required: false,
 			})
 		);
 	}
 
-	public async run(source: CommandSource, role: Role, ratingMin: number, ratingMax: number) {
+	public async run(source: CommandSource, role: Role, ratingMin: number, ratingMax?: number) {
 		await prisma.role.create({
 			data: {
 				guildId: source.guild.id,
 				roleId: role.id,
 				ratingMin,
-				ratingMax,
+				ratingMax: ratingMax ?? 99_999,
 			},
 		});
 
