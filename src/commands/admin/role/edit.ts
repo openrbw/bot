@@ -52,7 +52,10 @@ export default class EditRoleCommand extends Command {
 			},
 		});
 
-		return `Edited role ${role} with rating range \`${dbRole.ratingMin}\`-\`${dbRole.ratingMax}\`.`;
+		if (dbRole.ratingMax !== null)
+			return `Edited role ${role} with rating range \`${dbRole.ratingMin}\`-\`${dbRole.ratingMax}\`.`;
+		else
+			return `Edited role ${role} with rating range \`${dbRole.ratingMin}+\`.`;
 	}
 
 	public async catch(_: Error, __: CommandSource, role: Role) {

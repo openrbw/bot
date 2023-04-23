@@ -172,7 +172,7 @@ model Role {
   roleId    String @id
   guildId   String
   ratingMin Int
-  ratingMax Int
+  ratingMax Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

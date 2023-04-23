@@ -43,11 +43,14 @@ export default class CreateRoleCommand extends Command {
 				guildId: source.guild.id,
 				roleId: role.id,
 				ratingMin,
-				ratingMax: ratingMax ?? 99_999,
+				ratingMax,
 			},
 		});
 
-		return `Created role ${role} with rating range \`${ratingMin}\`-\`${ratingMax}\`.`;
+		if (ratingMax)
+			return `Created role ${role} with rating range \`${ratingMin}\`-\`${ratingMax}\`.`;
+		else
+			return `Created role ${role} with rating range \`${ratingMin}+\`.`;
 	}
 
 	public async catch(_: Error, __: CommandSource, role: Role) {

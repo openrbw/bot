@@ -8,15 +8,35 @@ export async function computeRoleChanges(guildId: string, oldRating: number, new
 			guildId,
 			OR: [
 				{
+					ratingMin: {
+						gt: oldRating,
+						lte: newRating,
+					},
 					ratingMax: {
-						lt: newRating,
-						gte: oldRating,
+						gte: newRating,
 					},
 				},
 				{
 					ratingMin: {
-						gt: newRating,
 						lte: oldRating,
+						gt: newRating,
+					},
+				},
+				{
+					ratingMax: {
+						lt: oldRating,
+						gte: newRating,
+						not: null,
+					},
+					ratingMin: {
+						lte: newRating,
+					},
+				},
+				{
+					ratingMax: {
+						gte: oldRating,
+						lt: newRating,
+						not: null,
 					},
 				},
 			],
@@ -28,7 +48,7 @@ export async function computeRoleChanges(guildId: string, oldRating: number, new
 		},
 	});
 
-	const [remove, add] = iter(roles).partition(r => r.ratingMax < newRating || r.ratingMin > newRating);
+	const [remove, add] = iter(roles).partition(r => (r.ratingMax !== null && r.ratingMax < newRating) || r.ratingMin > newRating);
 
 	return { remove, add };
 }

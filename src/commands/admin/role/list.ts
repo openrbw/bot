@@ -28,7 +28,7 @@ export default class ListRoleCommand extends Command {
 
 		return embed({
 			title: `Rating roles (${roles.length})`,
-			description: roles.map(r => `<@&${r.roleId}> \`${r.ratingMin}\`-\`${r.ratingMax}\``).join('\n'),
+			description: roles.map(r => `<@&${r.roleId}> \`${r.ratingMin}${r.ratingMax !== null ? `\`-\`${r.ratingMax}\`` : '+`'}`).join('\n'),
 		});
 	}
 }
