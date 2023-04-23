@@ -32,7 +32,7 @@ export async function scoreGame(guild: Guild, game: GameWithModeNameAndPlayersWi
 					const rating = muToRating(score.mu);
 
 					roleChangePromises.push(async () => {
-						const roles = await computeRoleChanges(game.guildId, oldRating, rating);
+						const roles = await computeRoleChanges(game.guildId, game.modeId, oldRating, rating);
 
 						for (const role of roles.add) {
 							await guild.members.addRole({

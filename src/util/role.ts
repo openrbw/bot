@@ -2,10 +2,11 @@ import { prisma } from '$/database';
 
 import { iter } from './iter';
 
-export async function computeRoleChanges(guildId: string, oldRating: number, newRating: number) {
+export async function computeRoleChanges(guildId: string, modeId: number, oldRating: number, newRating: number) {
 	const roles = await prisma.role.findMany({
 		where: {
 			guildId,
+			modeId,
 			OR: [
 				{
 					ratingMin: {
