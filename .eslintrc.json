@@ -19,7 +19,7 @@
 				"SwitchCase": 1,
 				"flatTernaryExpressions": true,
 				"offsetTernaryExpressions": false,
-				"ignoredNodes": ["TemplateLiteral"]
+				"ignoredNodes": ["TemplateLiteral", "ConditionalExpression"]
 			}
 		],
 		"linebreak-style": ["error", "unix"],

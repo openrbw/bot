@@ -27,6 +27,9 @@ config.formatting.padFields = false;
 		verbose: false,
 	});
 
+	// There is no leak, so just disable the warning
+	client.setMaxListeners(0);
+
 	addConnector(new MinecraftConnector(client));
 
 	const [commandCount] = await Promise.all([

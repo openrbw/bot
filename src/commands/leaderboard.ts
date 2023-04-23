@@ -9,9 +9,11 @@ import {
 } from '@matteopolak/framecord';
 import { Mode } from '@prisma/client';
 import { prisma } from 'database';
-import { ActionRowBuilder, ButtonBuilder, Events, Interaction } from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Events, Interaction } from 'discord.js';
 
 const PROPERTIES = ['rating', 'wins', 'mvps', 'losses', 'winstreak', 'losestreak'] as const;
+const PROPERTIES_HUMAN = ['Rating', 'Wins', 'MVPs', 'Losses', 'Win Streak', 'Lose Streak'] as const;
+const MEDALS = ['🥇', '🥈', '🥉'] as const;
 
 export default class LeaderboardCommand extends Command {
 	constructor(options: CommandOptions) {
@@ -128,6 +130,15 @@ export default class LeaderboardCommand extends Command {
 	private async getView(modeId: number, property: number, page: number) {
 		const key = PROPERTIES[property];
 
+		const mode = await prisma.mode.findFirst({
+			where: {
+				id: modeId,
+			},
+			select: {
+				name: true,
+			},
+		});
+
 		const users = await prisma.profile.findMany({
 			where: {
 				modeId,
@@ -154,9 +165,13 @@ export default class LeaderboardCommand extends Command {
 
 		return {
 			embeds: embed({
-				title: `${modeId} Leaderboard`,
-				// @ts-expect-error - Prisma does not support dynamic keys
-				description: users.map((u, i) => `${i + 1}. <@${u.user.discordId}> (\`${u[key]}\`)`).join('\n') || 'No users found.',
+				title: `${mode?.name ?? '???'} • Leaderboard • ${PROPERTIES_HUMAN[property]}`,
+				description: users.map(
+					// @ts-expect-error - Prisma does not support dynamic keys
+					page === 1 ? (u, i) => `${MEDALS[i] ?? `\`${i + 1}\`.`} <@${u.user.discordId}> (\`${u[key]}\`)`
+						// @ts-expect-error - Prisma does not support dynamic keys
+						: (u, i) => `\`${i + 1}\`. <@${u.user.discordId}> (\`${u[key]}\`)`
+				).join('\n') || 'No users found.',
 			}).embeds,
 			components: [
 				new ActionRowBuilder<ButtonBuilder>({
@@ -165,11 +180,13 @@ export default class LeaderboardCommand extends Command {
 							label: '◄',
 							customId: `leaderboard.${modeId}.${property}.${page - 1}`,
 							disabled: page === 1,
+							style: ButtonStyle.Secondary,
 						}),
 						new ButtonBuilder({
 							label: '►',
 							customId: `leaderboard.${modeId}.${property}.${page + 1}`,
 							disabled: users.length < 20,
+							style: ButtonStyle.Secondary,
 						}),
 					],
 				}),
