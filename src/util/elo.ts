@@ -12,6 +12,10 @@ export function muToRating(mu: number): number {
 	return Math.floor(SCALING_FACTOR * mu + BASE_RATING);
 }
 
+export function ratingToMu(rating: number): number {
+	return (rating - BASE_RATING) / SCALING_FACTOR;
+}
+
 export const enum GameResult {
 	WIN,
 	TIE,
