@@ -141,6 +141,12 @@ export default class RescoreCommand extends Command {
 							decrement: user.mu,
 						},
 						rating: newRating,
+						wins: game.winner === user.team ? {
+							decrement: 1,
+						} : undefined,
+						losses: game.winner === user.team || game.winner === null ? undefined : {
+							decrement: 1,
+						},
 					},
 				});
 

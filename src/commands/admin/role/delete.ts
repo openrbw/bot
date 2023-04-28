@@ -44,12 +44,10 @@ export default class DeleteRoleCommand extends Command {
 
 	@EventHandler()
 	public async roleDelete(role: Role) {
-		await prisma.role.delete({
+		await prisma.role.deleteMany({
 			where: {
-				guildId_roleId: {
-					guildId: role.guild.id,
-					roleId: role.id,
-				},
+				guildId: role.guild.id,
+				roleId: role.id,
 			},
 		});
 	}

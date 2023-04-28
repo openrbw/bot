@@ -11,9 +11,7 @@ import { Mode } from '@prisma/client';
 import { prisma } from 'database';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Events, Interaction } from 'discord.js';
 
-const PROPERTIES = ['rating', 'wins', 'mvps', 'losses', 'winstreak', 'losestreak'] as const;
-const PROPERTIES_HUMAN = ['Rating', 'Wins', 'MVPs', 'Losses', 'Win Streak', 'Lose Streak'] as const;
-const MEDALS = ['🥇', '🥈', '🥉'] as const;
+import { PROPERTIES, PROPERTIES_HUMAN } from '$/constants';
 
 export default class LeaderboardCommand extends Command {
 	constructor(options: CommandOptions) {

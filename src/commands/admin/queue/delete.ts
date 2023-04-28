@@ -53,12 +53,10 @@ export default class DeleteQueueCommand extends Command {
 
 	@EventHandler()
 	public async channelDelete(channel: VoiceChannel) {
-		await prisma.queue.delete({
+		await prisma.queue.deleteMany({
 			where: {
-				guildId_channelId: {
-					guildId: channel.guild.id,
-					channelId: channel.id,
-				},
+				guildId: channel.guild.id,
+				channelId: channel.id,
 			},
 		});
 	}
