@@ -12,6 +12,7 @@ import { prisma } from 'database';
 import { Events, Interaction, PermissionFlagsBits, User } from 'discord.js';
 
 import { PROPERTIES, PROPERTIES_HUMAN } from '$/constants';
+import { ratingToRawMu } from '$/util/elo';
 
 export default class ModifyCommand extends Command {
 	constructor(options: CommandOptions) {
@@ -130,6 +131,9 @@ export default class ModifyCommand extends Command {
 				[property]: {
 					increment: change,
 				},
+				mu: propertyId === 0 ? {
+					increment: ratingToRawMu(change),
+				} : undefined,
 			},
 		});
 

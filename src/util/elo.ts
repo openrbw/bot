@@ -8,6 +8,10 @@ const PI2 = Math.PI ** 2;
 const TAU = 0.5;
 const TAU_COMPUTED = 1 / TAU ** 2;
 
+export function ratingToRawMu(rating: number): number {
+	return rating / SCALING_FACTOR;
+}
+
 export function muToRating(mu: number): number {
 	return Math.floor(SCALING_FACTOR * mu + BASE_RATING);
 }
