@@ -29,3 +29,7 @@ export function parseTimeString(time: string) {
 export function timeToDiscordStamp(date: Date) {
 	return `<t:${Math.floor(date.getTime() / 1000)}:R>`;
 }
+
+export function sleep(ms: number): Promise<true> {
+	return new Promise(r => setTimeout(r, ms, true));
+}

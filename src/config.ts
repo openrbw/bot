@@ -1,6 +1,28 @@
+import fs from 'node:fs';
+
+function updateFromDisk() {
+	try {
+		const disk = JSON.parse(fs.readFileSync('./config.json', 'utf-8'));
+
+		config = {
+			...config,
+			...disk,
+		};
+	} catch (e) {
+		console.warn('Failed to update config from disk');
+		console.warn(e);
+	}
+}
+
+updateFromDisk();
+
 export interface QueueConfig {
 	maximumStdev: number;
 }
+
+export let config = {
+	cooldown: 1_000,
+};
 
 export const channels = {
 	scoring: {

@@ -17,6 +17,7 @@ import {
 } from 'discord.js';
 import { inPlaceSort } from 'fast-sort';
 
+import { config } from '$/config';
 import { Connector } from '$/connectors/base';
 import {
 	modeAndGuildToQueueData,
@@ -26,6 +27,7 @@ import {
 } from '$/handlers/queue';
 import { member } from '$/util/forge';
 import { iter } from '$/util/iter';
+import { sleep } from '$/util/time';
 
 export const enum GameState {
 	PRE_GAME,
@@ -352,6 +354,17 @@ export class GameManager extends Handler {
 		// Lock the players
 		this.reserveParties(parties);
 
+		// Wait for the cooldown to give players the chance to leave
+		await sleep(config.cooldown);
+
+		// Make sure everyone is still in the voice channel
+		// If they aren't, release everyone and abort the game
+		if (!parties.every(p => p.members.every(m => queue.players.has(m.discordId)))) {
+			this.releaseParties(parties);
+
+			return;
+		}
+
 		const gameId = this.number++;
 		const players = this.createTeams(queue, parties);
 
@@ -447,7 +460,7 @@ export class GameManager extends Handler {
 
 		const game = await this.createGame(queue, parties, guild);
 
-		if (queue.mode.connector !== null) {
+		if (queue.mode.connector !== null && game) {
 			const connector = connectors.get(queue.mode.connector);
 
 			if (connector) {
