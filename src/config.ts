@@ -22,6 +22,7 @@ export interface QueueConfig {
 
 export let config = {
 	cooldown: 1_000,
+	queueEnabled: true,
 };
 
 export const channels = {

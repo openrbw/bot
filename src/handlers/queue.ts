@@ -4,6 +4,7 @@ import { prisma } from 'database';
 import { ChannelType, VoiceState } from 'discord.js';
 import { inPlaceSort } from 'fast-sort';
 
+import { config } from '$/config';
 import { GameManager } from '$/managers/game';
 import { iter } from '$/util/iter';
 import { stdev } from '$/util/math';
@@ -306,7 +307,7 @@ export default class QueueHandler extends Handler {
 
 		queue.players.add(user.discordId);
 
-		this.searchForGame(queue);
+		if (config.queueEnabled) this.searchForGame(queue);
 	}
 
 	/** Removes a player from the queue */

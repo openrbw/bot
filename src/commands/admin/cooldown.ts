@@ -11,7 +11,7 @@ import { PermissionFlagsBits } from 'discord.js';
 
 import { config } from '$/config';
 
-export default class CreateRoleCommand extends Command {
+export default class CooldownCommand extends Command {
 	constructor(options: CommandOptions) {
 		super(options);
 
@@ -30,9 +30,9 @@ export default class CreateRoleCommand extends Command {
 	}
 
 	public async run(_source: CommandSource, ms: number) {
-		await fs.writeFile('./config.json', JSON.stringify(config, null, '\t'));
-
 		config.cooldown = ms;
+
+		await fs.writeFile('./config.json', JSON.stringify(config, null, '\t'));
 
 		return `Successfully set cooldown to **${ms / 1_000} seconds**.`;
 	}
