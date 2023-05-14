@@ -11,7 +11,7 @@ import { Mode } from '@prisma/client';
 import { prisma } from 'database';
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, Events, Interaction } from 'discord.js';
 
-import { PROPERTIES, PROPERTIES_HUMAN } from '$/constants';
+import { MEDALS, PROPERTIES, PROPERTIES_HUMAN } from '$/constants';
 
 export default class LeaderboardCommand extends Command {
 	constructor(options: CommandOptions) {
