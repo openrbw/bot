@@ -75,7 +75,6 @@ export default class BanCommand extends Command {
 				mapper: parseTimeString,
 				ignoreIfDefined: -1,
 				required: false,
-				default: 0,
 			}),
 			new Argument({
 				type: ArgumentType.Boolean,
@@ -91,8 +90,8 @@ export default class BanCommand extends Command {
 	public async run(
 		source: CommandSource,
 		user: User,
-		duration: number,
-		overwrite: boolean
+		duration = 1_000 * 60 * 60 * 24 * 365 * 5,
+		overwrite = true
 	) {
 		const updated = await prisma.user.upsert({
 			where: {
